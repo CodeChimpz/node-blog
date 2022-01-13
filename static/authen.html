@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+</head>
+<body>
+<div>
+    <form action = "/authen/handle-login-form" method = "post">
+        <ul>
+            <li>
+                <label for="name">Your Nickname</label>
+                <input type="text"  name="u_name" id="name" required>
+            </li>
+            <li>
+                <label for="email">Your Email</label>
+                <input type="email" name="u_email" id="email" required>
+            </li>
+            <li>
+                <label for="pass">Your Password</label>
+                <input type="password" name="u_pass" id="pass" required>
+            </li>
+            <li>
+                <button type="submit">Submit</button>
+            </li>
+        </ul>
+    </form>
+    <form action = "/authen/handle-registration-form" method = "post">
+        <ul>
+
+        </ul>
+    </form>
+    <form action = "/authen/handle-upload picture" method = "post">
+        <ul>
+
+        </ul>
+    </form>
+</div>
+</body>
+</html>

@@ -1,0 +1,16 @@
+/**/
+a{
+    color:#000444;
+}
+a:visited{
+    color:green;
+}
+
+/**/
+#header{
+    background-color:#ffff44;
+    text-align: center;
+    height:100px;
+    width:80%;
+    margin-right:50%;
+}
