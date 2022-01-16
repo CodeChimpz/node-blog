@@ -6,27 +6,12 @@
 </head>
 <body>
     <div>
-        <script>
-            function sendLogin(){
-                const response = fetch("/authen/handle-user/login", {
-                    method: 'post',
-                    headers: {'Content-Type': "application/json"},
-                    body: JSON.stringify({
-                        name: document.getElementById("name").value,
-                        pass: document.getElementById("pass").value,
-                    })
-                })
-                        .then(result=>console.log(result))
-                        .catch(err=>console.log(err))
-            }
 
-
-        </script>
         <form id="login" onsubmit="sendLogin()">
             <ul>
                 <li>
                     <label for="name">Имя</label>
-                    <input type="text"  name="name" id="name" paceholder="Имя пользователя" required>
+                    <input type="text"  name="name" id="name" placeholder="Имя пользователя" required>
                 </li>
                 <li>
                     <label>
@@ -41,5 +26,48 @@
         </form>
 
         </div>
+    <script>
+
+        const form = document.getElementById("login")
+        form.addEventListener("submit",e=>e.preventDefault())
+
+        function sendLogin(){
+            fetch("/authen/handle-user/login", {
+                method: 'post',
+                headers: {'Content-Type': "application/json"},
+                body: JSON.stringify({
+                    name: document.getElementById("name").value,
+                    pass: document.getElementById("pass").value,
+                })
+            })
+                .then(result=>{
+                    return result.json()
+                })
+                .then(result=>{
+                    alert(result["message"])
+                    console.log(result.success)
+                    if(result.success==="authorised") {
+                        return fetch("/redirect/index",{
+                            redirect:"follow"
+                        })
+                    }
+                })
+                .then(eventual=>{
+                    if(eventual){
+                        if (eventual.redirected) {
+                            console.log(eventual.url)
+                            window.location.replace(eventual.url)
+                        }
+                    }
+                })
+                //         }})
+                .catch(err=>{
+                    console.log(err)
+
+                })
+        }
+
+
+    </script>
 </body>
 </html>

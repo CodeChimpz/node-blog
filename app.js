@@ -1,5 +1,6 @@
 const express = require('express')
 const cookie = require('cookie-parser')
+const session = require('express-session')
 
 //mySQL
 const conn = require('./mysql_db.js')
@@ -22,12 +23,19 @@ app.use(express.static(__dirname+"/static"))
 //middleware
 app.use(express.urlencoded({extended:false}))
 app.use(express.json())
+
+// app.use(session(
+
+
+// ))
 //cookies
 app.use(cookie("sosetzhopu"))
 
-
 //router
 app.use('/authen',auth_router)
+
+
+
 
 //обрабатывает редирект на главную
 app.get('/redirect/index',(req,res)=>{
