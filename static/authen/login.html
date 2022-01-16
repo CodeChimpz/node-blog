@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+</head>
+<body>
+    <div>
+        <script>
+            function sendLogin(){
+                const response = fetch("/authen/handle-user/login", {
+                    method: 'post',
+                    headers: {'Content-Type': "application/json"},
+                    body: JSON.stringify({
+                        name: document.getElementById("name").value,
+                        pass: document.getElementById("pass").value,
+                    })
+                })
+                        .then(result=>console.log(result))
+                        .catch(err=>console.log(err))
+            }
+
+
+        </script>
+        <form id="login" onsubmit="sendLogin()">
+            <ul>
+                <li>
+                    <label for="name">Имя</label>
+                    <input type="text"  name="name" id="name" paceholder="Имя пользователя" required>
+                </li>
+                <li>
+                    <label>
+                        <p>Пароль</p>
+                        <input type="password" name="pass" id="pass" placeholder="Введите пароль" required>
+                    </label>
+                </li>
+                <li>
+                    <button type="submit">Отправить</button>
+                </li>
+            </ul>
+        </form>
+
+        </div>
+</body>
+</html>

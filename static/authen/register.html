@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+</head>
+<body>
+<div>
+    <script type="application/javascript">
+    </script>
+    <form id="reg" onsubmit="sendRegistration()">
+        <ul>
+            <li>
+                <label for="name">Имя</label>
+                <input type="text"  name="name" id="name" required>
+            </li>
+            <li>
+                <label for="email">Ваш E-mail</label>
+                <input type="email" name="email" id="email" placeholder="Введите действительный E-mail" required>
+            </li>
+            <li>
+                <label>
+                    <p>Пароль</p>
+                    <input type="password" name="pass" id="pass" placeholder="Введите пароль" required>
+                    <input type="password" name="confirm_pass" id="confirm_pass" placeholder="Подтвердите ваш пароль" required>
+                </label>
+            </li>
+            <li>
+                <button type="submit">Отправить</button>
+            </li>
+        </ul>
+    </form>
+    <script type="application/javascript">
+
+        //sending form
+        const form = document.getElementById("reg")
+        form.addEventListener("submit",e=>e.preventDefault())
+
+        function sendRegistration(){
+            fetch("/authen/handle-user/registration",{
+                method:"post",
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({
+                    name:document.getElementById("name").value,
+                    email:document.getElementById("email").value,
+                    pass:document.getElementById("pass").value,
+
+                })})
+                .then(result=>{
+                    return result.json()
+                })
+                .then(result=>{
+                    alert(result["message"])
+                    console.log(result.success)
+                    if(result.success==="authorised") {
+                        return fetch("/redirect/index",{
+                            redirect:"follow"
+                        })
+                    }
+                })
+                .then(eventual=>{
+                    if(eventual){
+                        if (eventual.redirected) {
+                            console.log(eventual.url)
+                            window.location.replace(eventual.url)
+                        }
+                    }
+                })
+                //         }})
+                .catch(err=>{
+                    console.log(err)
+
+                })
+
+        }
+        //validation check
+        const password = document.getElementById("pass")
+        const confirm_password = document.getElementById("confirm_pass")
+        function validatePassword(){
+            if(password.value === confirm_password.value){
+                password.setCustomValidity('')
+            }
+            else{
+                console.log('Пароли не совпадают')
+                password.setCustomValidity('Пароли не совпадают')
+            }
+        }
+        password.onchange=validatePassword
+        confirm_password.onchange=validatePassword
+    </script>
+</div>
+</body>
+</html>
