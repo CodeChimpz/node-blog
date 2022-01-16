@@ -9,7 +9,7 @@ function encrypt(pass){
 }
 
 router.post("/handle-user/registration",(req,res)=> {
-     handleForm(req,res,registerForm)
+     registerForm(req,res)
          .then(result=>console.log(result))
          .catch(err=>{
              res.status(500).json({"message":`Error`,"success":"false"})
@@ -19,7 +19,7 @@ router.post("/handle-user/registration",(req,res)=> {
 
 )
 router.post("/handle-user/login",(req,res)=>{
-    handleForm(req,res,loginForm)
+    loginForm(req,res)
         .then(result=>console.log(result))
         .catch(err=>{
             res.status(500).json({"message":`Error`,"success":"false"})
@@ -29,15 +29,6 @@ router.post("/handle-user/login",(req,res)=>{
 
 //handle Form functions
 
-function handleForm(req,res,func){
-    return new Promise((resolve,reject)=>{
-        func(req,res)
-            .then((result)=>resolve(result))
-            .catch((err)=>{
-                reject(err)
-        })
-    })
-}
 
 async function registerForm(req,res){
 

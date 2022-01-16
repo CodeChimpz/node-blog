@@ -6,9 +6,6 @@ const session = require('express-session')
 const conn = require('./mysql_db.js')
 
 //Routers'
-
-// const general_router = require('./router/router.js')
-const cookie_router = require('./router/cookies.js')
 const auth_router = require('./router/authen.js')
 // const conn =require('./mysql_db.js')
 
@@ -25,8 +22,8 @@ app.use(express.urlencoded({extended:false}))
 app.use(express.json())
 
 // app.use(session(
-
-
+//
+//
 // ))
 //cookies
 app.use(cookie("sosetzhopu"))

@@ -3,33 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <title>Register</title>
+    <link type="text/css" rel="stylesheet" href="/style.css">
+<!--    <link rel="stylesheet" href="/style.css">-->
 </head>
-<body>
-<div>
-    <script type="application/javascript">
-    </script>
-    <form id="reg" onsubmit="sendRegistration()">
-        <ul>
+<body class="forms">
+<div class="header">
+    <nav id="menu">
+        <div id="authentication">
+            <a id ="user" href="/authen/user.html">User page</a>
+            <a id="login"  href="/authen/login.html">Log in</a>
+        </div>
+        <ul id="navigation">
             <li>
-                <label for="name">Имя</label>
-                <input type="text"  name="name" id="name" required>
+                <a href="about.html">About</a>
             </li>
             <li>
-                <label for="email">Ваш E-mail</label>
-                <input type="email" name="email" id="email" placeholder="Введите действительный E-mail" required>
-            </li>
-            <li>
-                <label>
-                    <p>Пароль</p>
-                    <input type="password" name="pass" id="pass" placeholder="Введите пароль" required>
-                    <input type="password" name="confirm_pass" id="confirm_pass" placeholder="Подтвердите ваш пароль" required>
-                </label>
-            </li>
-            <li>
-                <button type="submit">Отправить</button>
+                <a href="gallery.html">View gallery</a>
             </li>
         </ul>
-    </form>
+    </nav>
+</div>
+    <div class="userAuth">
+        <form class="authenticationForm" id="reg" onsubmit="sendRegistration()">
+            <ul>
+                <li>
+                    <label for="name">Имя</label>
+                    <input type="text"  name="name" id="name" placeholder="Ваше имя"  required>
+                </li>
+                <li>
+                    <label for="email">Ваш E-mail</label>
+                    <input type="email" name="email" id="email" placeholder="Введите действительный E-mail" required>
+                </li>
+                <li>
+                    <label>
+                        <p>Пароль</p>
+                        <input type="password" name="pass" id="pass" placeholder="Введите пароль" required>
+                        <input type="password" name="confirm_pass" id="confirm_pass" placeholder="Подтвердите ваш пароль" required>
+                    </label>
+                </li>
+
+            </ul>
+            <button type="submit">Отправить</button>
+        </form>
+
+    </div>
     <script type="application/javascript">
 
         //sending form
@@ -88,6 +105,5 @@
         password.onchange=validatePassword
         confirm_password.onchange=validatePassword
     </script>
-</div>
-</body>
+</bodyclassforms>
 </html>

@@ -1,1 +1,89 @@
-/**/
+/*GLOBAL STYLEs*/
+body{
+    margin:0;
+}
+.header{
+    background-color: darkgrey;
+    opacity:.7;
+    width:100%;
+
+}
+/*.forms{*/
+/*    background-image:url(/public/Expl_DeadSea.jpg) ;*/
+/*    background-position: top;*/
+/*    background-attachment: fixed;*/
+/*    background-size:100%;*/
+/*    background-repeat: no-repeat;*/
+/*}*/
+ul{
+    list-style: none none;
+
+}
+#menu{
+    padding:10px 0 10px 0;
+    display: flex;
+    width: 100%;
+    align-content: space-between;
+    justify-content: space-between;
+}
+/*menu*/
+#authentication{
+    float:right;
+}
+#navigation{
+    float:left;
+    margin:0;
+    padding:0;
+}
+/*AUTHENTICATION PAGES STYLES*/
+.userAuth {
+    background-color: rgba(255,255,255,0.5);
+    margin-left:auto;
+    display:flex;
+    justify-content: center;
+}
+.authenticationForm{
+    display: table-cell;
+    horiz-align: center;
+    padding: 25px 0 15px 0;
+}
+
+.authenticationForm > ul > *{
+    width:100%;
+    margin: 5px;
+
+}
+.authenticationForm > ul > li > label > p{
+    margin: 5px 0 5px 0;
+
+}
+/*button[type=submit]{*/
+/*    !*width:50%;*!*/
+/*    margin-left:25%;*/
+/*    margin-top:5px;*/
+/*    padding:5px 50px 5px 50px;*/
+/*    border-radius: 25px;*/
+/*    border-width:0;*/
+/*    background-color: aquamarine;*/
+/*    box-shadow: 0 1px 1px 0 rgba(0,0,0,0.5);*/
+
+/*}*/
+
+/*user*/
+#userpf {
+    width: 80%;
+    height: 200px;}
+
+#pfp{
+    width: 100px;
+    height: 100px;
+    margin: 10px;
+}
+#uploadpfp{
+    padding-left: 50px;
+    /*display: flex;*/
+    /*justify-content: flex-start;*/
+    /*align-content: stretch;*/
+    /*flex-wrap: wrap;*/
+    /*align-items: baseline;*/
+}

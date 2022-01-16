@@ -3,11 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <title>Login</title>
+    <link type="text/css" rel="stylesheet" href="/style.css">
+<!--    <link type="application/javascript" rel="script" href="handleforms.js">-->
 </head>
-<body>
-    <div>
-
-        <form id="login" onsubmit="sendLogin()">
+<body class="forms">
+<div class="header">
+    <nav id="menu">
+        <div id="authentication">
+            <a id ="user" href="/authen/user.html">User page</a>
+            <a id="register" href="/authen/register.html">Register</a>
+        </div>
+        <ul id="navigation">
+            <li>
+                <a href="about.html">About</a>
+            </li>
+            <li>
+                <a href="gallery.html">View gallery</a>
+            </li>
+        </ul>
+    </nav>
+</div>
+    <div class="userAuth">
+        <form class="authenticationForm" id="login" onsubmit="sendLogin()">
             <ul>
                 <li>
                     <label for="name">Имя</label>
@@ -19,15 +36,12 @@
                         <input type="password" name="pass" id="pass" placeholder="Введите пароль" required>
                     </label>
                 </li>
-                <li>
-                    <button type="submit">Отправить</button>
-                </li>
             </ul>
+            <button type="submit">Отправить</button>
         </form>
 
         </div>
     <script>
-
         const form = document.getElementById("login")
         form.addEventListener("submit",e=>e.preventDefault())
 
@@ -66,7 +80,6 @@
 
                 })
         }
-
 
     </script>
 </body>

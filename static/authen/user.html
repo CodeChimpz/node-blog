@@ -3,8 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <link rel="stylesheet" href="/style.css">
 </head>
+
 <body>
+    <div class="header">
+        <nav id="menu">
+            <div id="authentication">
+                <a id ="user" href="/authen/user.html">User page</a>
+                <a id="login"  href="/authen/login.html">Log in</a>
+                <a id="register" href="/authen/register.html">Register</a>
+            </div>
+            <ul id="navigation">
+                <li>
+                    <a href="about.html">About</a>
+                </li>
+                <li>
+                    <a href="gallery.html">View gallery</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    <div id="userpf">
+        <div id = "pfp">
+            <img id="pfpimg"/>
+        </div>
+        <form id="uploadpfp">
+            <label>Upload pfp</label>
+            <input type="file">
+            <button type="submit">Submit</button>
+        </form>
+        <div>
+            <p id = "username"></p>
+            <p id="email" ></p>
+        </div>
+        <div id="useractionmenu">
+            <ul>
+                <li>
+                    <a href="">Settings</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+
 
 </body>
 </html>
