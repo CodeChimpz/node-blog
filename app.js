@@ -1,49 +1,54 @@
 const express = require('express')
-const cookie = require('cookie-parser')
+//session
 const session = require('express-session')
+const cookies = require('cookie-parser')
 
-//mySQL
-const conn = require('./mysql_db.js')
+//DB
+const Sequelize = require('sequelize')
+const connection = require('./mysql_db.js')
+//
+const auth_router = require('./authen.js')
 
-//Routers'
-const auth_router = require('./router/authen.js')
-// const conn =require('./mysql_db.js')
 
 //SETTING UP server
 const app = express()
 const port = 1000
+
+//routers
+
 //handlebars
 app.set("view engine","handlebars")
-
 //static data
 app.use(express.static(__dirname+"/static"))
 //middleware
 app.use(express.urlencoded({extended:false}))
 app.use(express.json())
 
-// app.use(session(
-//
-//
-// ))
-//cookies
-app.use(cookie("sosetzhopu"))
+//sessions
+app.use(session(
+    {
+        secret:"aT4ck 0v D4 b34sT",
+        saveUninitialized:false,
+        cookie:{
+            maxAge:60000
+        }
+    }
+))
 
 //router
 app.use('/authen',auth_router)
 
-
-
+//ROUTING
 
 //обрабатывает редирект на главную
 app.get('/redirect/index',(req,res)=>{
-        console.log("Redirecting from " + req.url)
         res.redirect("/")
 })
 
 //
 app.listen(port,()=>{
-    conn.connect()
-        .then(()=>console.log("Connected to DB"))
+    connection.sync()
+        .then((res)=>console.log(res+"\nConnected to DB"))
         .catch(err=>()=>console.log(err))
     console.log(`Server started on port ${port}\nSystem time : ${Date()}`
     )
