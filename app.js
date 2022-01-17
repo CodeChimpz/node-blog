@@ -47,7 +47,7 @@ app.use("/draw-user-auth",(req,res)=>{
         <a class="logout" href="/authen/logout">Logout</a>`
         )
     }
-    res.status(298).append("Content-Type","text/html").append("Draw","Unauth").send(
+    res.status(401).append("Content-Type","text/html").append("Draw","Unauth").send(
         `<a id="login"  href="/authen/login.html">Log in</a>
          <a id="register" href="/authen/register.html">Register</a>`)
 })

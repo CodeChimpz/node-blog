@@ -2,15 +2,13 @@ const path= require('path')
 
 const express = require('express')
 const Sequelize = require('sequelize')
-
+//sql db
 const conn = require('./mysql_db.js')
 const User = require('./model/user_model.js')
-
+//encryption
+const argon2 = require('argon2')
 const auth_router = express.Router()
 
-function encrypt(pass,hash_pass){
-    return pass===hash_pass
-}
 //register
 auth_router.post("/handle-user/registration",(req,res)=> {
         registerForm(req,res)
@@ -29,7 +27,11 @@ auth_router.post("/handle-user/login",(req,res)=>{
             console.log(err)
         })
 })
-
+//logout
+auth_router.get("/logout",(req,res)=>{
+    req.session.isAuth=false
+    res.redirect("/")
+})
 //handle user
 auth_router.route("/user")
     .get((req,res)=> {
@@ -37,7 +39,7 @@ auth_router.route("/user")
         if (req.session.isAuth){
             return res.status(200).sendFile(path.join(__dirname,"/static/authen/user.html"))
         }
-        res.status(401).send("Access denied! Authorize first!")
+        res.status(403).send("Access denied! Authorize first!")
 
     })
 
@@ -62,12 +64,13 @@ async function registerForm(req,res){
             return("'User already exists' alert sent")
         }
         const getIndex = await User.max('userid')
+        const passEncrypted = await argon2.hash(user.pass)
         const addUser = await User.create(
             {
                 userid:(1+Number(getIndex))||"0",
                 username:user.name,
                 useremail:user.email,
-                userpass:user.pass,
+                userpass:passEncrypted,
                 createdAt:Date(),
                 updateAt:Date(),
             }
@@ -87,7 +90,7 @@ async function loginForm(req,res){
         const getPass = await User.findOne({where:{'username':user.name},attributes:['userpass']},{raw:true})
         const userPass = getPass? getPass.userpass : 0
         if (userPass) {
-            if (encrypt(userPass,user.pass)) {
+            if (argon2.verify(userPass,user.pass)) {
                 req.session.isAuth=true
                 res.status(201).json({"message": `Добро пожаловать, ${user.name} !`, "success": "authorised"})
                 return ("User authorised")
