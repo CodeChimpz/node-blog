@@ -23,6 +23,7 @@ app.use(express.static(__dirname+"/static"))
 //middleware
 app.use(express.urlencoded({extended:false}))
 app.use(express.json())
+//custom mw
 
 //sessions
 app.use(session(
@@ -31,12 +32,25 @@ app.use(session(
         saveUninitialized:false,
         cookie:{
             maxAge:60000
-        }
+        },
+        isAuth:false,
     }
 ))
 
 //router
 app.use('/authen',auth_router)
+
+app.use("/draw-user-auth",(req,res)=>{
+    if(req.session.isAuth){
+        return res.status(201).append("Content-Type","text/html").append("Draw","Auth").send(
+            ` <a id ="user" href="/authen/user">User page</a>
+        <a class="logout" href="/authen/logout">Logout</a>`
+        )
+    }
+    res.status(298).append("Content-Type","text/html").append("Draw","Unauth").send(
+        `<a id="login"  href="/authen/login.html">Log in</a>
+         <a id="register" href="/authen/register.html">Register</a>`)
+})
 
 //ROUTING
 

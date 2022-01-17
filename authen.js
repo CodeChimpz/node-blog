@@ -1,3 +1,5 @@
+const path= require('path')
+
 const express = require('express')
 const Sequelize = require('sequelize')
 
@@ -16,12 +18,12 @@ auth_router.post("/handle-user/registration",(req,res)=> {
             .catch(err=>{
                 console.log(err)
             })
-    }
-)
+    })
 //login and set authentication id
 auth_router.post("/handle-user/login",(req,res)=>{
         loginForm(req,res)
         .then(result=>{
+            console.log(result)
         })
         .catch(err=>{
             console.log(err)
@@ -31,10 +33,10 @@ auth_router.post("/handle-user/login",(req,res)=>{
 //handle user
 auth_router.route("/user")
     .get((req,res)=> {
-        console.log()
-        // if (1){
-        //     return res.status(200).sendFile("/authen/user.html")
-        // }
+        console.log(req.session)
+        if (req.session.isAuth){
+            return res.status(200).sendFile(path.join(__dirname,"/static/authen/user.html"))
+        }
         res.status(401).send("Access denied! Authorize first!")
 
     })
@@ -86,9 +88,8 @@ async function loginForm(req,res){
         const userPass = getPass? getPass.userpass : 0
         if (userPass) {
             if (encrypt(userPass,user.pass)) {
-                res.cookie("isAuth","true")
+                req.session.isAuth=true
                 res.status(201).json({"message": `Добро пожаловать, ${user.name} !`, "success": "authorised"})
-
                 return ("User authorised")
             }
             return res.status(401).json({"message": `Wrong password!`, "success": "false"})
