@@ -11,7 +11,7 @@
     <nav id="menu">
         <div id="authentication">
 <!--            <a id ="user" href="/authen/user">User page</a>-->
-            <a id="register" href="/authen/register.html">Register</a>
+            <a id="register" href="/user/register.html">Register</a>
         </div>
         <ul id="navigation">
             <li>
@@ -45,16 +45,16 @@
 
         </div>
     <script>
-        const form = document.getElementById("login")
+        const form = document.forms.login
         form.addEventListener("submit",e=>e.preventDefault())
 
         function sendLogin(){
-            fetch("/authen/handle-user/login", {
+            fetch("/login", {
                 method: 'post',
                 headers: {'Content-Type': "application/json"},
                 body: JSON.stringify({
-                    name: document.getElementById("name").value,
-                    pass: document.getElementById("pass").value,
+                    name: form.elements.name.value,
+                    pass: form.elements.pass.value,
                 })
             })
                 .then(result=>{
@@ -72,7 +72,6 @@
                 .then(eventual=>{
                     if(eventual){
                         if (eventual.redirected) {
-                            console.log(eventual.url)
                             window.location.replace(eventual.url)
                         }
                     }

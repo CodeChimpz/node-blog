@@ -10,7 +10,7 @@
     <div class="header">
         <nav id="menu">
             <div id="authentication">
-                <a class="logout" href="/authen/logout">Logout</a>
+
             </div>
             <ul id="navigation">
                 <li>
@@ -27,12 +27,12 @@
     </div>
     <div id="userpf">
         <div id = "pfp">
-            <img id="pfpimg"/>
+            <img name="pfpimg" id="pfpimg" src="/img/no-avatar.png"/>
         </div>
-        <form id="uploadpfp">
-            <label>Upload pfp</label>
-            <input type="file">
-            <button type="submit">Submit</button>
+        <form id="uploadpfp" onsubmit="updatePFP()">
+            Фото профиля:<input name="pfpimage" type="file" accept="image/png,image/jpeg">
+            <button name="sendpfp" type="submit">Загрузить</button>
+            <button name="deletepfp" type="submit">Удалить фото профиля</button>
         </form>
         <div>
             <p id = "username"></p>
@@ -46,6 +46,34 @@
             </ul>
         </div>
     </div>
+    <script>
+        const pfpUpload = document.forms.uploadpfp
+        const pfpCont = document.getElementById("pfpimg")
+        pfpUpload.addEventListener('submit',e=>e.preventDefault())
+        function updatePFP(){
+            const sendfile = pfpUpload.elements.pfpimage.files[0]
+            const data = new FormData
+            data.set('file',sendfile)
+            fetch("/user/data",{
+                method:'post',
+                headers:{
+                    'File-Type':'image',
+                    'Image-Name':sendfile.name,
+                    'Image-Size':sendfile.size
+                },
+                body:data
+            }).then(res=>
+            {
+                return res.json()
+            })
+                .then(res=>{
+                console.log(res.message)
+            }
+            )
+                .catch(err=>{console.log(err)})
+        }
 
+    </script>
+    <script src="/authenticated.js"></script>
 </body>
 </html>
