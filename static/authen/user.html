@@ -50,11 +50,12 @@
         const pfpUpload = document.forms.uploadpfp
         const pfpCont = document.getElementById("pfpimg")
         pfpUpload.addEventListener('submit',e=>e.preventDefault())
+
         function updatePFP(){
             const sendfile = pfpUpload.elements.pfpimage.files[0]
             const data = new FormData
             data.set('file',sendfile)
-            fetch("/user/data",{
+            fetch("/user/data/userPfp",{
                 method:'post',
                 headers:{
                     'File-Type':'image',

@@ -55,13 +55,13 @@ async function loginForm(req,res){
     try{
         const user = req.body
 
-        const getUser = await User.findOne({where:{'username':user.name},attributes:['userpass','userid']},{raw:true})
+        const getUser = await User.findOne({where:{'username':user.name},attributes:['userpass','primaryid']},{raw:true})
         const userPass = getUser? getUser.userpass : 0
         if (userPass) {
             if (await argon2.verify(userPass,user.pass)) {
                 req.session.isAuth=true
                 //
-                req.session.Id = getUser.userid
+                req.session.Id = getUser.primaryid
                 //
                  res.status(201).json({"message": `Добро пожаловать, ${user.name} !`, "success": "authorised"})
                 return

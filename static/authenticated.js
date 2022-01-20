@@ -28,7 +28,7 @@ function sendUserMenuContainers(){
 
 function sendPFP(){
     if(userPFP){
-        fetch("/user/data",{
+        fetch("/user/data/userPfp",{
 
         })
             .then(res=>{return res.json()})

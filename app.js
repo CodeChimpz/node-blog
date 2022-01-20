@@ -23,7 +23,7 @@ app.use(express.static(__dirname+"/static"))
 //middleware
 app.use(fileUpload(
     {
-        // abortOnLimit:8*1024*1024,
+        abortOnLimit:8*1024*1024,
         createParentPath:true,
         safeFileNAmes:true,
         useTempFiles:true,
@@ -61,17 +61,12 @@ app.get('/redirect/index',(req,res)=>{
 app.route("/registration")
     .post((req,res)=> {
         registerForm(req,res)
-            .then(result=>console.log(result))
+            .then(
+                // result=>console.log(result)
+            )
             .catch(err=>{
                 console.log(err)
             })
-    })
-    .delete(async function(req,res){
-        if(
-            1
-        ){
-            const userToDel = await User.findOne({where:{'username':req.body.name},attributes:['userpass']},{raw:true})
-        }
     })
 
 //login and set authentication id
@@ -79,25 +74,19 @@ app.route("/login")
     .post((req,res)=>{
         loginForm(req,res)
             .then(result=>{
-                console.log(result)
+                // console.log(result)
             })
             .catch(err=>{
                 console.log(err)
             })
     })
 
-//logout
-app.get("/logout",(req,res)=>{
-    req.session.destroy((err)=>{
-        console.log(err)
-        res.redirect("/")
-    })
-})
 
 //
 app.listen(port,()=>{
     connection.sync(
         // {force:true}
+        // {alter:true}
     )
         .then((res)=>console.log(res+"\nConnected to DB"))
         .catch(err=>()=>console.log(err))
