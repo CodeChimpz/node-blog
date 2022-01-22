@@ -9,7 +9,8 @@ const { User,UserPf } = require('../model/user_model.js')
 const argon2 = require('argon2')
 const router = express.Router()
 
-router.use("/draw-user-auth",(req,res,next)=>{
+//"Login/Register" or "UserPage/Logout" render
+router.get("/draw-user-auth",(req,res)=>{
     if(
         req.session.isAuth
     ){
@@ -17,14 +18,13 @@ router.use("/draw-user-auth",(req,res,next)=>{
             ` <a id ="user" href="/user/user_page">User page</a>
               <a class="logout" href="/user/logout" >Logout</a>`
         )
-        next()
     }
     res.status(299).append("Content-Type","text/html").append("Draw","Unauth").send(
         `<a id="login"  href="/login.html">Log in</a>
          <a id="register" href="/register.html">Register</a>`)
-    next()
 })
-//incapsulate user route
+
+//Authorization check on /user* route
 router.use(function(req,res,next){
     if (!req.session.isAuth){
         return res.status(401).redirect("/")
@@ -43,9 +43,7 @@ router.get("/logout",(req,res)=>{
 //delete user
 router.delete("/",async function(req,res){
     try{
-        // console.log("Deleting " + req.session.Id)
         const deleteUser = await User.destroy({where:{'userid':req.session.Id}})
-        // console.log(deleteUser)
         req.session.destroy((err)=>{
             console.log(err)
         })
@@ -56,20 +54,21 @@ router.delete("/",async function(req,res){
     }
 })
 
-
-
 //handle userpage
 router.route("/user_page")
     .get((req,res)=> {
-        if (req.session.isAuth ){
-            return res.status(200).sendFile("/authen/user.html",{
+        console.log(req.session.Role)
+            if(req.session.Role==="user"){
+                return res.status(200).sendFile("/authen/user.html",{
                 root:"./static"
             })
-        }
-        res.status(403).send("Access denied! Authorize first!")
+            }
+            else if(req.session.Role === "ADMIN"){
+                return res.status(200).sendFile("//тут будет админская страница")
+            }
     })
 
-//manage user profile data
+//user profile data API
 router.route("/data/:Data")
     .get(async function (req,res){
     try{
@@ -85,7 +84,7 @@ router.route("/data/:Data")
         try{
         switch(req.params.Data){
             case "userPfp"  :
-                const im_name = req.files.file.name
+                const im_name = req.session.userName + "_" + req.files.file.name
                 const im_path = path.join('./static/public_img', im_name)
                 req.files.file.mv(im_path,
                     (err, result) => {
@@ -105,7 +104,7 @@ router.route("/data/:Data")
                 const toUpdate= {}
                 toUpdate[req.params.Data]=req.body.value
                 const updateData = await UserPf.update(toUpdate,{where:{'userPrimaryid':req.session.Id}})
-                res.status(200).json({"Data":updateData})
+                res.status(200).json({"message":`updated`})
             }
         }catch (err) {
             console.log(err)
@@ -116,13 +115,17 @@ router.route("/data/:Data")
         try{
             const toUpdate= {}
             toUpdate[req.params.Data]=""
-            const updateData = await UserPf.update(toUpdate,{where:{'userPrimaryid':req.session.Id}})
-            res.status(200).json({"Data":deleteData})
+            const deleteData = await UserPf.update(toUpdate,{where:{'userPrimaryid':req.session.Id}})
+            res.status(200).json({"message":`deleted`})
             }catch (err) {
                 console.log(err)
                 res.sendStatus(500) }
 
     })
+
+
+//User gallery API (Загрузка фото в галерею пользователя)
+router.route("")
 
 module.exports =
     router

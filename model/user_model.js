@@ -1,7 +1,7 @@
-const connection = require('../mysql_db.js')
+const { users }  = require('../mysql_db.js')
 const Sequelize = require('sequelize')
 
-const User = connection.define(
+const User = users.define(
     'users',{
         primaryid:{
             type:Sequelize.INTEGER,
@@ -31,11 +31,11 @@ const User = connection.define(
         },
     },
     {
-
+        //options
     }
 
 )
-const UserPf = connection.define(
+const UserPf = users.define(
     'userpfs',{
         userPfp: {
             type:Sequelize.STRING,
@@ -60,7 +60,7 @@ const UserPf = connection.define(
         // }
     },
     {createdAt:false,
-    updatedAt:false}
+    updatedAt:false}//позже добавить проверку даты???мб
 )
 
 UserPf.belongsTo(User,

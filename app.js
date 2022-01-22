@@ -1,14 +1,18 @@
 const express = require('express')
-//session
 const session = require('express-session')
-const cookies = require('cookie-parser')
+// const cookies = require('cookie-parser')
 const fileUpload = require('express-fileupload')
+const cors = require('cors')
 //DB
 const Sequelize = require('sequelize')
-const connection = require('./mysql_db.js')
-//authentication modules
+const {
+    users,
+    app_opt,
+    session_store}  = require('./mysql_db.js')
+
+//authentication router, authentication functions
 const auth_router = require('./router/authen.js')
-const {registerForm, loginForm} = require('./static/user_functions.js')
+const {registerForm, loginForm} = require('./user_functions.js')
 
 //SETTING UP server
 const app = express()
@@ -21,6 +25,13 @@ app.set("view engine","handlebars")
 //static data
 app.use(express.static(__dirname+"/static"))
 //middleware
+//cors
+const CORSoptions = {
+    origin: ['http://knigalitso.com','http://test.com'],
+    optionsSuccessStatus:200
+}
+app.use(cors(CORSoptions))
+//body parsing
 app.use(fileUpload(
     {
         abortOnLimit:8*1024*1024,
@@ -47,12 +58,12 @@ app.use(session(
 ))
 
 //router
-// app.use(upload_router)
+//Authorized user actions
 app.use('/user',auth_router)
 
 //Routing
 
-//обрабатывает редирект на главную
+//redirect to main --- не нужно, потом уберу
 app.get('/redirect/index',(req,res)=>{
         res.redirect("/")
 })
@@ -81,15 +92,19 @@ app.route("/login")
             })
     })
 
-
 //
 app.listen(port,()=>{
-    connection.sync(
-        // {force:true}
-        // {alter:true}
-    )
-        .then((res)=>console.log(res+"\nConnected to DB"))
-        .catch(err=>()=>console.log(err))
     console.log(`Server started on port ${port}\nSystem time : ${Date()}`
     )
+    const connectDb = async function (){
+        try{
+        await users.sync()
+        await session_store.sync()
+        await app_opt.sync()
+            console.log("Connected to DB")
+    }catch(err){
+            console.log(err)
+        }}
+     connectDb()
+
 })

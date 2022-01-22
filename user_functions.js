@@ -3,10 +3,11 @@ const path= require('path')
 const express = require('express')
 const Sequelize = require('sequelize')
 //sql db
-const conn = require('../mysql_db.js')
-const { User,UserPf } = require('../model/user_model.js')
+const conn = require('./mysql_db.js')
+const { User,UserPf } = require('./model/user_model.js')
 //encryption
 const argon2 = require('argon2')
+
 //handle Form functions
 async function registerForm(req,res){
     try{
@@ -61,7 +62,10 @@ async function loginForm(req,res){
             if (await argon2.verify(userPass,user.pass)) {
                 req.session.isAuth=true
                 //
+                //todo = добавить авторизацию админа
                 req.session.Id = getUser.primaryid
+                req.session.userName = user.name
+                req.session.Role = "user"
                 //
                  res.status(201).json({"message": `Добро пожаловать, ${user.name} !`, "success": "authorised"})
                 return
