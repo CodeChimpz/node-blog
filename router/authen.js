@@ -5,6 +5,7 @@ const Sequelize = require('sequelize')
 //sql db
 const conn = require('../mysql_db.js')
 const { User,UserPf } = require('../model/user_model.js')
+const Gallery = require('../model/gallery_model')
 //encryption
 const argon2 = require('argon2')
 const router = express.Router()
@@ -72,7 +73,7 @@ router.route("/user_page")
 router.route("/data/:Data")
     .get(async function (req,res){
     try{
-        const pfdata = await UserPf.findOne({where:{'id':req.session.Id},attributes:[req.params.Data]},{raw:true})
+        const pfdata = await UserPf.findOne({where:{'userPrimaryid':req.session.Id},attributes:[req.params.Data]},{raw:true})
         res.status(200).json(pfdata.dataValues)
 
     }catch(err){
@@ -89,7 +90,7 @@ router.route("/data/:Data")
                 req.files.file.mv(im_path,
                     (err, result) => {
                         if (err) {
-                            res.status(500).json({"message": "Server fileupload ERR"})
+                            return res.status(500).json({"message": "Server fileupload ERR"})
                             console.log(err)
                         } else {
                             UserPf.update({'userPfp': im_name}, {where: {'userPrimaryid': req.session.Id}}).then(()=> {
@@ -125,7 +126,53 @@ router.route("/data/:Data")
 
 
 //User gallery API (Загрузка фото в галерею пользователя)
-router.route("")
+router.route("/image")
+    .get(async function(req,res){
+        try{
+            const getImage = await Gallery.findOne({
+                where:{
+                        'userPrimaryid':req.session.Id,
+                        'idInner':Number(req.query.id)
+
+                },
+            })
+            const path_to =path.join("/public_img/",getImage.imgName)
+            res.status(200).sendFile(path_to,{
+                root:"./static"
+            })
+        }catch (err) {
+            console.log(err)
+            res.status(404).json({"message": "Image not found"})
+        }
+
+    })
+    .post(async function(req,res) {
+        try {
+            if (req.get("Image-Type") === "image/jpeg") {
+
+                latestOfUser = await Gallery.max('idInner',{where:{'userPrimaryid':req.session.Id}})
+                const index =(latestOfUser||0) + 1
+                const im_name = req.session.userName + "_img_" + String(index) + ".jpg"
+                const im_path = path.join('./static/public_img', im_name)
+                await req.files.photo.mv(
+                    im_path)
+                const addImageToGallery = await Gallery.create({
+                    userPrimaryid: req.session.Id,
+                    idInner:index,
+                    imgName: im_name,
+                    description: req.body.descr,
+                    tags: "",
+                    createdAt: Date(),
+                    updateAt: Date()
+                })
+                res.status(200).json({"message": "File uploaded"})
+            }
+        } catch (err) {
+            console.log(err)
+            res.status(500).json({"message": "Server fileupload ERR"})
+        }
+    })
+    .delete()
 
 module.exports =
     router

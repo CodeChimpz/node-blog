@@ -64,9 +64,11 @@ const UserPf = users.define(
 )
 
 UserPf.belongsTo(User,
-    {targetKey:"primaryid",foreignKey:"id",onDelete:'CASCADE'}
+    {targetKey:"primaryid",foreignKey:"userPrimaryid",onDelete:'CASCADE'}
     )
-User.hasOne(UserPf,{onDelete:'CASCADE'})
+User.hasOne(UserPf)
+
+
 
 module.exports = {
     User,

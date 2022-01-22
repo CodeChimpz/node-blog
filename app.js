@@ -6,9 +6,8 @@ const cors = require('cors')
 //DB
 const Sequelize = require('sequelize')
 const {
-    users,
-    app_opt,
-    session_store}  = require('./mysql_db.js')
+    users
+}  = require('./mysql_db.js')
 
 //authentication router, authentication functions
 const auth_router = require('./router/authen.js')
@@ -27,7 +26,7 @@ app.use(express.static(__dirname+"/static"))
 //middleware
 //cors
 const CORSoptions = {
-    origin: ['http://knigalitso.com','http://test.com'],
+    origin: ['http://knigalitso.com','http://test.com','http://localhost:*'],
     optionsSuccessStatus:200
 }
 app.use(cors(CORSoptions))
@@ -98,9 +97,9 @@ app.listen(port,()=>{
     )
     const connectDb = async function (){
         try{
-        await users.sync()
-        await session_store.sync()
-        await app_opt.sync()
+        await users.sync(
+            // {force:true}
+        )
             console.log("Connected to DB")
     }catch(err){
             console.log(err)

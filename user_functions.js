@@ -5,6 +5,7 @@ const Sequelize = require('sequelize')
 //sql db
 const conn = require('./mysql_db.js')
 const { User,UserPf } = require('./model/user_model.js')
+const Gallery = require('./model/gallery_model.js')
 //encryption
 const argon2 = require('argon2')
 
@@ -39,9 +40,8 @@ async function registerForm(req,res){
                 updateAt:Date(),
             }
         )
-        const getPrimaryId = addUser.primaryid
-        const updateAssociations = await UserPf.create({
-                userPrimaryid:getPrimaryId,
+        await UserPf.create({
+                userPrimaryid:addUser.primaryid,
             }
         )
         res.status(201).json({"message": `Добро пожаловать, ${user.name} !`, "success": "authorised"})
