@@ -85,5 +85,6 @@ async function loginForm(req,res){
 
 }
 
+
 module.exports = {registerForm,
 loginForm}

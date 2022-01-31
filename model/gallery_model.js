@@ -8,11 +8,6 @@ const Gallery = users.define(
                 type:Sequelize.INTEGER,
                 allowNull:false,
             },
-            idInner:{
-                type:Sequelize.INTEGER,
-                allowNull:false,
-                unique:true,
-            },
             imgName:{
                 type:Sequelize.STRING,
                 allowNull:false

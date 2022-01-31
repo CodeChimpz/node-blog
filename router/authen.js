@@ -1,7 +1,8 @@
 const path= require('path')
+const fs= require('fs')
 
 const express = require('express')
-const Sequelize = require('sequelize')
+const {Sequelize,Op} = require('sequelize')
 //sql db
 const conn = require('../mysql_db.js')
 const { User,UserPf } = require('../model/user_model.js')
@@ -114,10 +115,10 @@ router.route("/data/:Data")
     })
     .delete(async function (req,res){
         try{
-            const toUpdate= {}
-            toUpdate[req.params.Data]=""
-            const deleteData = await UserPf.update(toUpdate,{where:{'userPrimaryid':req.session.Id}})
-            res.status(200).json({"message":`deleted`})
+                const toUpdate= {}
+                toUpdate[req.params.Data]=""
+                const deleteData = await UserPf.update(toUpdate,{where:{'userPrimaryid':req.session.Id}})
+                res.status(200).json({"message":`deleted`})
             }catch (err) {
                 console.log(err)
                 res.sendStatus(500) }
@@ -126,53 +127,133 @@ router.route("/data/:Data")
 
 
 //User gallery API (Загрузка фото в галерею пользователя)
-router.route("/image")
+router.route("/image/:imgId")
     .get(async function(req,res){
         try{
+            if(req.params.imgId){
             const getImage = await Gallery.findOne({
                 where:{
                         'userPrimaryid':req.session.Id,
-                        'idInner':Number(req.query.id)
-
+                        'id': Number(req.params.imgId)
                 },
             })
-            const path_to =path.join("/public_img/",getImage.imgName)
-            res.status(200).sendFile(path_to,{
-                root:"./static"
-            })
+            res.status(200).json(
+                {
+                    id,
+                    description,
+                    tags,
+                    imgName
+                } = getImage
+            )}
         }catch (err) {
             console.log(err)
             res.status(404).json({"message": "Image not found"})
         }
 
     })
+    //pass formdata object
     .post(async function(req,res) {
         try {
-            if (req.get("Image-Type") === "image/jpeg") {
+                const index= await Gallery.max('id',{where:{
+                    'userPrimaryid':req.session.Id
+                    }})
+                const im_name = req.session.userName + "_maxres_" + Number(index ? index+1 : 1) + ".jpg"
 
-                latestOfUser = await Gallery.max('idInner',{where:{'userPrimaryid':req.session.Id}})
-                const index =(latestOfUser||0) + 1
-                const im_name = req.session.userName + "_img_" + String(index) + ".jpg"
                 const im_path = path.join('./static/public_img', im_name)
                 await req.files.photo.mv(
                     im_path)
+
                 const addImageToGallery = await Gallery.create({
                     userPrimaryid: req.session.Id,
-                    idInner:index,
                     imgName: im_name,
                     description: req.body.descr,
-                    tags: "",
+                    tags: req.body.tags,
                     createdAt: Date(),
                     updateAt: Date()
                 })
                 res.status(200).json({"message": "File uploaded"})
-            }
+
         } catch (err) {
             console.log(err)
             res.status(500).json({"message": "Server fileupload ERR"})
         }
     })
-    .delete()
+    .put(async function(req,res){
+        try {
+            const toUpdate = {}
+            toUpdate[`${req.body.attr}`] = req.body.newval
+            const updatePhoto = await Gallery.update(toUpdate,{where:{
+                    'userPrimaryid':req.session.Id,
+                    'id':req.params.imgId
+                }})
+            res.status(200).json({"message": "Updated"})
+        } catch (err) {
+            console.log(err)
+            res.status(500).json({"message": "Server fileupload ERR"})
+        }
+    })
+    .delete(async function(req,res){
+        try{
+            const im_name = await Gallery.findOne({
+                where:{
+                    'userPrimaryid':req.session.Id,
+                    'id':Number(req.params.imgId)
+                },
+                attributes:['imgName']
+            })
+            await fs.promises.unlink(path.join('./static/public_img/',im_name.imgName)
+            )
+            await Gallery.destroy({
+                where:{
+                    'userPrimaryid':req.session.Id,
+                    'id':Number(req.params.imgId)
+                },
+            })
+            res.status(200).json({"message": "File destroyed"})
+        }catch (err) {
+            if(err.message === "Unlink err"){
+                return res.status(500).json({"message": "Filesystem error on server"})
+            }
+            res.status(404).json({"message": "Image not found"})
+        }
+
+    })
+
+//Поиск всех фото
+    //пользователя
+router.route("/images").get(
+    async function(req,res){
+        try {
+            const getUserGallery = await Gallery.findAll(
+                {
+                    where: {
+                        'userPrimaryid': req.session.Id
+                    }
+                }
+            )
+            res.status(200).json(getUserGallery)
+        }catch(err){
+            res.status(404).json({"message": "Image not found"})
+        }
+    }
+)
+    //по тегам
+router.route("/gallery/tags")
+    .get(async function(req,res){
+        try{
+            const tag = req.query.tags
+            const gotPictures = await Gallery.findAll({where:{
+                    'tags':{
+                        [Op.like]:`%${tag}%`
+                    }
+                }})
+            res.status(200).json(gotPictures)
+        }
+            catch(err){
+                console.log(err)
+                res.status(404).json({"message": "Image not found"})
+            }
+    })
 
 module.exports =
     router
