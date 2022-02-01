@@ -1,55 +1,40 @@
 const express = require('express')
 const session = require('express-session')
-const fileUpload = require('express-fileupload')
 const cors = require('cors')
-const exphbs = require('express-handlebars')
-const handlebars = require('hbs')
+const fileUpload = require('express-fileupload')
+//
+require('dotenv').config()
+
 //DB
 const Sequelize = require('sequelize')
-const { users,User,UserPf,Gallery,Tags } = require('./mysql_db.js')
-
+const {users}  = require('./mysql_db.js')
 //authentication router, authentication functions
 const auth_router = require('./router/authen.js')
-const search_router = require('./router/search.js')
 const {registerForm, loginForm} = require('./user_functions.js')
-
+//Redis
+const redis = require('redis')
+const connectRedis = require('connect-redis')(session)
 //SETTING UP server
 const app = express()
 //handlebars
-app.engine("hbs",exphbs.engine({
-    defaultLayout:false,
-    partialsDir:"./views/partials",
-    extname:'.hbs'
-}))
-app.set("view engine","hbs")
-handlebars.registerPartial("settings","/views/partials/pfsettings.hbs")
-handlebars.registerPartial("auth_nav","/views/partials/auth_nav.hbs")
-handlebars.registerPartial("unauth_nav","/views/partials/unauth_nav.hbs")
-//static data
+app.set("view engine","handlebars")
+//static
 app.use(express.static(__dirname+"/static"))
-//middleware
-//cors
-const CORSoptions = {
-    origin: ['http://knigalitso.com','http://test.com','http://localhost:*'],
-    optionsSuccessStatus:200
-}
-app.use(cors(CORSoptions))
-//body parsing
-app.use(fileUpload(
-    {
-        abortOnLimit:8*1024*1024,
-        createParentPath:true,
-        safeFileNAmes:true,
-        useTempFiles:true,
-        tempFileDir:"/static/public/temp"
-    }
-))
-app.use(express.urlencoded({extended:false}))
-app.use(express.json())
+//MIDDLEWARE
 //sessions
+const redisClient = redis.createClient({legacyMode:true})
+redisClient.on("ready",()=>{
+    console.log("Connected to redis")
+})
+redisClient.on('error',(err)=>{
+    app.close()
+    throw err
+})
 app.use(session(
     {
+        store: new connectRedis({client:redisClient}),
         secret:"aT4ck 0v D4 b34sT",
+        name:'lecookie',
         saveUninitialized:false,
         cookie:{
             maxAge:60000
@@ -57,14 +42,45 @@ app.use(session(
         isAuth:false,
     }
 ))
-//router
-app.use("/search",search_router)
+//cors
+const CORSoptions = {
+    origin: function (origin,callback){
+        const origins = process.env.ORIGINS.split(',')
+        for (let supposed of origins){
+            if(origin)
+            {const supp_reg = new RegExp(supposed)
+            console.log(origin)
+            if(origin.search(supp_reg)!=-1){
+                return callback(null,origin)
+            }}
+        }
+        callback("This origin is not supported by this sites CORS policy !",null)
+
+    },
+    optionsSuccessStatus:200
+}
+app.use(cors(CORSoptions))
+
+//body parsing
+app.use(fileUpload(
+    {
+        abortOnLimit:8*1024*1024,
+        responseOnLimit:"File exceeds 8mb size!",
+        createParentPath:true,
+        safeFileNames:true,
+        useTempFiles:true,
+        tempFileDir:"/static/public/temp"
+    }
+))
+app.use(express.urlencoded({extended:false}))
+app.use(express.json())
+//Routing
 //Authorized user actions
 app.use('/user',auth_router)
 
-//Routing
-app.get('/redirect/',(req,res)=>{
-    res.redirect("/")
+//redirect to main --- не нужно, потом уберу
+app.get('/redirect/index',(req,res)=>{
+        res.redirect("/")
 })
 
 //register/delete from db
@@ -72,7 +88,6 @@ app.route("/registration")
     .post((req,res)=> {
         registerForm(req,res)
             .then(
-                // result=>console.log(result)
             )
             .catch(err=>{
                 console.log(err)
@@ -84,7 +99,6 @@ app.route("/login")
     .post((req,res)=>{
         loginForm(req,res)
             .then(result=>{
-                // console.log(result)
             })
             .catch(err=>{
                 console.log(err)
@@ -92,18 +106,21 @@ app.route("/login")
     })
 
 //
-app.listen(1000,()=>{
-    console.log(`Server started on port ${1000}\nSystem time : ${Date()}`
+const port = process.env.PORT
+app.listen(port,()=>{
+    console.log(`Server started on port ${port}\nSystem time : ${Date()}`
     )
-    const connectDb = async function (){
-        try{
-            await users.sync(
-                // {alter:true}
-            )
-            console.log("Connected to DB")
-    }catch(err){
-            console.log(err)
-        }}
-     connectDb()
+    connectDb();
+
 
 })
+async function connectDb(){
+    try{
+        await users.sync(
+            // {force:true}
+        )
+        console.log("Connected to DB")
+        await redisClient.connect()
+    }catch(err){
+        console.log(err)
+    }};
