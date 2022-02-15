@@ -1,0 +1,38 @@
+
+<div id="userpf">
+    <div id = "pfp">
+        {{#if pfp}}
+            <img name="pfpimg" id="pfpimg" src="/public_img/{{pfp}}"/>
+        {{else}}
+            <img name="pfpimg" id="pfpimg" src="/img/no-avatar.png"/>
+        {{/if}}
+
+
+        <p id = "username">
+            {{name}}
+        </p>
+        <p id="email">
+            {{email}}
+        </p>
+    </div>
+
+</div>
+
+<div id="gallery">
+    <ul>
+        {{#each photos}}
+
+            <li>
+                <img src = "/public_img/{{imgName}}"/>
+                <p>{{createdAt}}</p>
+                <p>{{description}}</p>
+                <ul>
+                    {{#each tags}}
+                        <p>#{{this}}</p>
+                    {{/each}}
+                </ul>
+            </li>
+
+        {{/each}}
+    </ul>
+</div>

@@ -24,7 +24,7 @@ const Gallery = users.define(
 
         }
     )
-User.hasOne(Gallery,{targetKey:"primaryid",foreignKey:"userPrimaryid",onDelete:'CASCADE'})
+User.hasMany(Gallery,{targetKey:"primaryid",foreignKey:"userPrimaryid",onDelete:'CASCADE'})
 Gallery.belongsTo(User)
 
 module.exports = Gallery

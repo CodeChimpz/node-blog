@@ -1,8 +1,9 @@
 const express = require('express')
 const session = require('express-session')
-// const cookies = require('cookie-parser')
 const fileUpload = require('express-fileupload')
 const cors = require('cors')
+const exphbs = require('express-handlebars')
+const handlebars = require('hbs')
 //DB
 const Sequelize = require('sequelize')
 const {
@@ -11,16 +12,21 @@ const {
 
 //authentication router, authentication functions
 const auth_router = require('./router/authen.js')
+const search_router = require('./router/search.js')
 const {registerForm, loginForm} = require('./user_functions.js')
 
 //SETTING UP server
 const app = express()
-const port = 1000
-
-//routers
-const upload_router = require('./router/upload_from_client')
 //handlebars
-app.set("view engine","handlebars")
+app.engine("hbs",exphbs.engine({
+    defaultLayout:false,
+    partialsDir:"./views/partials",
+    extname:'.hbs'
+}))
+app.set("view engine","hbs")
+handlebars.registerPartial("settings","/views/partials/pfsettings.hbs")
+handlebars.registerPartial("auth_nav","/views/partials/auth_nav.hbs")
+handlebars.registerPartial("unauth_nav","/views/partials/unauth_nav.hbs")
 //static data
 app.use(express.static(__dirname+"/static"))
 //middleware
@@ -42,8 +48,6 @@ app.use(fileUpload(
 ))
 app.use(express.urlencoded({extended:false}))
 app.use(express.json())
-//custom mw
-
 //sessions
 app.use(session(
     {
@@ -55,16 +59,14 @@ app.use(session(
         isAuth:false,
     }
 ))
-
 //router
+app.use("/search",search_router)
 //Authorized user actions
 app.use('/user',auth_router)
 
 //Routing
-
-//redirect to main --- не нужно, потом уберу
-app.get('/redirect/index',(req,res)=>{
-        res.redirect("/")
+app.get('/redirect/',(req,res)=>{
+    res.redirect("/")
 })
 
 //register/delete from db
@@ -92,8 +94,8 @@ app.route("/login")
     })
 
 //
-app.listen(port,()=>{
-    console.log(`Server started on port ${port}\nSystem time : ${Date()}`
+app.listen(1000,()=>{
+    console.log(`Server started on port ${1000}\nSystem time : ${Date()}`
     )
     const connectDb = async function (){
         try{

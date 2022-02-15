@@ -62,26 +62,27 @@
                 })
                 .then(result=>{
                     alert(result["message"])
-                    console.log(result.success)
-                    if(result.success==="authorised") {
-                        return fetch("/redirect/index",{
-                            redirect:"follow"
-                        })
-                    }
-                })
-                .then(eventual=>{
-                    if(eventual){
-                        if (eventual.redirected) {
-                            window.location.replace(eventual.url)
-                        }
-                    }
-                })
-                //         }})
+                    window.location.replace("/")
+                //     console.log(result.success)
+                //     if(result.success==="authorised") {
+                //         return fetch("/redirect/",{
+                //             redirect:"follow"
+                //         })
+                //     }
+                // })
+                // .then(eventual=>{
+                //     if(eventual){
+                //         if (eventual.redirected) {
+                //             window.location.replace(eventual.url)
+                //         }
+                //     }
+                // })
+
                 .catch(err=>{
                     console.log(err)
 
                 })
-        }
+        })}
 
     </script>
 </body>

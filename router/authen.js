@@ -10,6 +10,7 @@ const Gallery = require('../model/gallery_model')
 //encryption
 const argon2 = require('argon2')
 const router = express.Router()
+//subROUTERS
 
 //"Login/Register" or "UserPage/Logout" render
 router.get("/draw-user-auth",(req,res)=>{
@@ -17,7 +18,7 @@ router.get("/draw-user-auth",(req,res)=>{
         req.session.isAuth
     ){
         return res.status(201).append("Content-Type","text/html").append("Draw","Auth").send(
-            ` <a id ="user" href="/user/user_page">User page</a>
+            ` <a id ="user" href="/user/">User page</a>
               <a class="logout" href="/user/logout" >Logout</a>`
         )
     }
@@ -34,6 +35,40 @@ router.use(function(req,res,next){
     next()
 })
 
+//handle userpage
+router.route("/")
+    .get((req,res)=> {
+        if(req.session.Role==="user"){
+            async function handle_(req,res){
+                try{
+                    const user = await User.findOne({where:{'userid':req.session.Id},
+                        include:[{model:UserPf},{model:Gallery}]})
+
+                    const galleries_ = Object.values(user.galleries).map(photo=>{
+                        return{
+                            imgName:photo.imgName,
+                            description:photo.description,
+                            createdAt:photo.createdAt,
+                            tags: photo.tags.split(',')
+                        }
+                    })
+
+                    res.render("userpage",{
+                        layout:'upage_auth',
+                        name:user.username,
+                        email:user.useremail,
+                        pfp:user.userpf.userPfp,
+                        photos:galleries_
+                    })
+                }catch(err) {
+                }
+            }
+            handle_(req,res)
+        }
+        else if(req.session.Role === "ADMIN"){
+            return res.status(200).sendFile("//тут будет админская страница")
+        }
+    })
 
 //logout
 router.get("/logout",(req,res)=>{
@@ -42,6 +77,7 @@ router.get("/logout",(req,res)=>{
         res.redirect("/")
     })
 })
+
 //delete user
 router.delete("/",async function(req,res){
     try{
@@ -55,20 +91,6 @@ router.delete("/",async function(req,res){
         res.sendStatus(500)
     }
 })
-
-//handle userpage
-router.route("/user_page")
-    .get((req,res)=> {
-        console.log(req.session.Role)
-            if(req.session.Role==="user"){
-                return res.status(200).sendFile("/authen/user.html",{
-                root:"./static"
-            })
-            }
-            else if(req.session.Role === "ADMIN"){
-                return res.status(200).sendFile("//тут будет админская страница")
-            }
-    })
 
 //user profile data API
 router.route("/data/:Data")
@@ -219,41 +241,24 @@ router.route("/image/:imgId")
 
     })
 
-//Поиск всех фото
-    //пользователя
-router.route("/images").get(
-    async function(req,res){
-        try {
-            const getUserGallery = await Gallery.findAll(
-                {
-                    where: {
-                        'userPrimaryid': req.session.Id
-                    }
-                }
-            )
-            res.status(200).json(getUserGallery)
-        }catch(err){
-            res.status(404).json({"message": "Image not found"})
-        }
-    }
-)
-    //по тегам
-router.route("/gallery/tags")
-    .get(async function(req,res){
-        try{
-            const tag = req.query.tags
-            const gotPictures = await Gallery.findAll({where:{
-                    'tags':{
-                        [Op.like]:`%${tag}%`
-                    }
-                }})
-            res.status(200).json(gotPictures)
-        }
-            catch(err){
-                console.log(err)
-                res.status(404).json({"message": "Image not found"})
-            }
-    })
+//Поиск всех фото пользователя
+// router.route("/gallery").get(
+//     async function(req,res){
+//         try {
+//             const getUserGallery = await Gallery.findAll(
+//                 {
+//                     where: {
+//                         'userPrimaryid': req.session.Id
+//                     }
+//                 }
+//             )
+//             res.status(200).json(getUserGallery)
+//         }catch(err){
+//             res.status(404).json({"message": "Image not found"})
+//         }
+//     }
+// )
+
 
 module.exports =
     router

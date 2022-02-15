@@ -74,7 +74,7 @@
                     alert(result["message"])
                     console.log(result.success)
                     if(result.success==="authorised") {
-                        return fetch("/redirect/index",{
+                        return fetch("/redirect/",{
                             redirect:"follow"
                         })
                     }
