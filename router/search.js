@@ -3,7 +3,7 @@ const fs = require('fs')
 //sql db
 const {Sequelize,Op} = require('sequelize')
 
-const { User,UserPf,Gallery,Tags } = require('../mysql_db.js')
+const { User,UserPf,Gallery,Tags,users } = require('../mysql_db.js')
 
 const express = require('express')
 const router = express.Router()
@@ -47,12 +47,18 @@ router.route("/images/tags")
         try{
             const tag_user = req.query.tags.split(',')
             //get where tags from query are in photo tags
-            const gotPictures = await Gallery.findAll({
-                where:{
-
-                },
-                include: Tags
-            })
+            const gotPictures = await users.query(
+                `select group_concat( tags.tag order by tags.tag ) as the_tags, galleries.id,galleries.userPrimaryid,
+                galleries.description,galleries.imgName,galleries.createdAt
+             from verification.galleries
+             inner join (tagphoto,tags) on tagphoto.tagId = tags.id and galleries.id = tagphoto.id
+             where tag in (${tag_user.map(thing=>{return "\""+thing+"\""})})
+             group by galleries.id
+             having the_tags = '${(tag_user)}'
+             order by galleries.id
+             `,
+                {model:Gallery,mapToModel:true}
+            )
             res.status(200).json(gotPictures)
         }
         catch(err){
