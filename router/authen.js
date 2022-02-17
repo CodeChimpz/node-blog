@@ -43,14 +43,16 @@ router.route("/")
             async function handle_(req,res){
                 try{
                     const user = await User.findOne({where:{'userid':req.session.Id},
-                        include:[{model:UserPf},{model:Gallery}]})
+                        include:[{model:UserPf},{model:Gallery,include:Tags},]})
 
-                    const galleries_ = Object.values(user.galleries).map(photo=>{
+                    const photos_ = Object.values(user.galleries).map(photo=>{
                         return{
                             imgName:photo.imgName,
                             description:photo.description,
                             createdAt:photo.createdAt,
-                            tags: photo.tags.split(',')
+                            tags: photo.tags.map(tag=>{
+                                return tag.tag
+                            })
                         }
                     })
 
@@ -59,7 +61,7 @@ router.route("/")
                         name:user.username,
                         email:user.useremail,
                         pfp:user.userpf.userPfp,
-                        photos:galleries_
+                        photos:photos_
                     })
                 }catch(err) {
                 }

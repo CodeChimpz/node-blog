@@ -16,15 +16,16 @@ router.route("/user/:userName").get(
     async function handle_(req,res){
         try{
             const user = await User.findOne({where:{'username':req.params.userName},
-                include:[{model:UserPf},{model:Gallery}]},{raw:true})
+                include:[{model:UserPf},{model:Gallery,include:Tags},]})
 
-            //reworking object
-            const galleries_ = Object.values(user.galleries).map(photo=>{
+            const photos_ = Object.values(user.galleries).map(photo=>{
                 return{
                     imgName:photo.imgName,
                     description:photo.description,
                     createdAt:photo.createdAt,
-                    tags: photo.tags.split(',')
+                    tags: photo.tags.map(tag=>{
+                        return tag.tag
+                    })
                 }
             })
 
@@ -33,7 +34,7 @@ router.route("/user/:userName").get(
                 name:user.username,
                 email:user.useremail,
                 pfp:user.userpf.userPfp,
-                photos:galleries_
+                photos:photos_
             })
         }catch(err) {
         }
@@ -47,7 +48,10 @@ router.route("/images/tags")
             const tag_user = req.query.tags.split(',')
             //get where tags from query are in photo tags
             const gotPictures = await Gallery.findAll({
-                where:Sequelize.where(Sequelize.fn('find_in_set'),tag_user,Sequelize.col('tags'))
+                where:{
+
+                },
+                include: Tags
             })
             res.status(200).json(gotPictures)
         }
