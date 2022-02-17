@@ -3,9 +3,8 @@ const path= require('path')
 const express = require('express')
 const Sequelize = require('sequelize')
 //sql db
-const conn = require('./mysql_db.js')
-const { User,UserPf } = require('./model/user_model.js')
-const Gallery = require('./model/gallery_model.js')
+const { User,UserPf,Gallery,Tags } = require('./mysql_db.js')
+
 //encryption
 const argon2 = require('argon2')
 
@@ -52,7 +51,7 @@ async function registerForm(req,res){
     }
 }
 
-async function loginForm(req,res){
+async function loginForm(req,res) {
     try{
         const user = req.body
 
@@ -85,6 +84,26 @@ async function loginForm(req,res){
 
 }
 
+async function deleteUser(req,res){
+    try{
+        const getUser = await User.findOne({where:{'username':user.name},attributes:['userpass','primaryid']},{raw:true})
+        const userPass = getUser? getUser.userpass : 0
+        if (userPass) {
+            if (await argon2.verify(userPass, user.pass)) {
+                const deleteUser = await User.destroy({where: {'userid': req.session.Id}})
+                req.session.destroy((err) => {
+                    console.log(err)
+                })
+                res.status(204).redirect("/")
+            }
+        }
+    }catch(err){
+        res.sendStatus(500)
+    }}
 
-module.exports = {registerForm,
-loginForm}
+
+module.exports = {
+        registerForm,
+    loginForm,
+    deleteUser
+}

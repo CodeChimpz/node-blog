@@ -1,17 +1,17 @@
 const path= require('path')
 const fs= require('fs')
-
 const express = require('express')
-const {Sequelize,Op} = require('sequelize')
-//sql db
-const conn = require('../mysql_db.js')
-const { User,UserPf } = require('../model/user_model.js')
-const Gallery = require('../model/gallery_model')
+const { Sequelize,Op } = require('sequelize')
 //encryption
 const argon2 = require('argon2')
-const router = express.Router()
-//subROUTERS
+//
+const { deleteUser } = require('../user_functions.js')
+//sql db
+const { User,UserPf,Gallery,Tags } = require('../mysql_db.js')
 
+const router = express.Router()
+
+//todo- rework all into handlebars layouts?
 //"Login/Register" or "UserPage/Logout" render
 router.get("/draw-user-auth",(req,res)=>{
     if(
@@ -35,8 +35,9 @@ router.use(function(req,res,next){
     next()
 })
 
-//handle userpage
+//handle user
 router.route("/")
+    //handle userpage
     .get((req,res)=> {
         if(req.session.Role==="user"){
             async function handle_(req,res){
@@ -69,6 +70,8 @@ router.route("/")
             return res.status(200).sendFile("//тут будет админская страница")
         }
     })
+    //delete user : requires credentials
+    .delete((req,res)=>deleteUser(req,res))
 
 //logout
 router.get("/logout",(req,res)=>{
@@ -78,19 +81,6 @@ router.get("/logout",(req,res)=>{
     })
 })
 
-//delete user
-router.delete("/",async function(req,res){
-    try{
-        const deleteUser = await User.destroy({where:{'userid':req.session.Id}})
-        req.session.destroy((err)=>{
-            console.log(err)
-        })
-        res.status(204).redirect("/")
-    }catch(err){
-        console.log(err)
-        res.sendStatus(500)
-    }
-})
 
 //user profile data API
 router.route("/data/:Data")
@@ -156,16 +146,22 @@ router.route("/image/:imgId")
             const getImage = await Gallery.findOne({
                 where:{
                         'userPrimaryid':req.session.Id,
-                        'id': Number(req.params.imgId)
+                        'id': Number(req.params.imgId),
                 },
+                include:[Tags]
+
             })
-            res.status(200).json(
-                {
+            //destucture model properties
+                const {
                     id,
-                    description,
-                    tags,
-                    imgName
+                        description,
+                        tag_names = getImage.tags.map(tag => {
+                            return tag.tag
+                        }),
+                        imgName
                 } = getImage
+                res.status(200).json(
+                    {id, description, tag_names, imgName}
             )}
         }catch (err) {
             console.log(err)
@@ -173,26 +169,31 @@ router.route("/image/:imgId")
         }
 
     })
-    //pass formdata object
+    //pass formdata object{desc,tags,photo}
     .post(async function(req,res) {
         try {
-                const index= await Gallery.max('id',{where:{
+            //get index to build img path
+            const index= await Gallery.max('id',{where:{
                     'userPrimaryid':req.session.Id
                     }})
                 const im_name = req.session.userName + "_maxres_" + Number(index ? index+1 : 1) + ".jpg"
-
                 const im_path = path.join('./static/public_img', im_name)
-                await req.files.photo.mv(
-                    im_path)
-
+                //building Tags Object to insert into Tags model
+                const im_tags = []
+                for(elem of req.body.tags.split(',')){
+                    im_tags.push({'tag':elem})
+                }
                 const addImageToGallery = await Gallery.create({
                     userPrimaryid: req.session.Id,
                     imgName: im_name,
                     description: req.body.descr,
-                    tags: req.body.tags,
+                    tags: im_tags,
                     createdAt: Date(),
                     updateAt: Date()
+                },{
+                    include:Tags
                 })
+                await req.files.photo.mv(im_path)
                 res.status(200).json({"message": "File uploaded"})
 
         } catch (err) {
@@ -202,12 +203,26 @@ router.route("/image/:imgId")
     })
     .put(async function(req,res){
         try {
-            const toUpdate = {}
-            toUpdate[`${req.body.attr}`] = req.body.newval
-            const updatePhoto = await Gallery.update(toUpdate,{where:{
-                    'userPrimaryid':req.session.Id,
-                    'id':req.params.imgId
-                }})
+            const photo = await Gallery.findByPk(req.params.imgId)
+            //update tags if tags are changed
+            if(req.body.tags){
+                //delete all old tags from junction table and tags table
+                const old_tags = await photo.getTags()
+                await photo.removeTags(old_tags)
+                for(tag of old_tags){
+                    await tag.destroy()
+                }
+                // and insert new
+                for(elem of req.body.tags.split(',')){
+                    const newTag = await Tags.create({tag:elem})
+                    photo.addTag(newTag)
+                    debugger
+                }
+            }
+            //update descr
+            if(req.body.descr){
+                await photo.update({descr:req.body.descr})
+            }
             res.status(200).json({"message": "Updated"})
         } catch (err) {
             console.log(err)
@@ -216,15 +231,23 @@ router.route("/image/:imgId")
     })
     .delete(async function(req,res){
         try{
-            const im_name = await Gallery.findOne({
+            //get instance
+            const photo = await Gallery.findOne({
                 where:{
                     'userPrimaryid':req.session.Id,
                     'id':Number(req.params.imgId)
-                },
-                attributes:['imgName']
+                }
             })
-            await fs.promises.unlink(path.join('./static/public_img/',im_name.imgName)
+            //delete all old tags from junction table and tags table
+            const old_tags = await photo.getTags()
+            for(tag of old_tags){
+                await tag.destroy()
+            }
+            //get name
+            //delete from disk
+            await fs.promises.unlink(path.join('./static/public_img/',photo.imgName)
             )
+            //destroy gallery instance
             await Gallery.destroy({
                 where:{
                     'userPrimaryid':req.session.Id,
@@ -241,23 +264,6 @@ router.route("/image/:imgId")
 
     })
 
-//Поиск всех фото пользователя
-// router.route("/gallery").get(
-//     async function(req,res){
-//         try {
-//             const getUserGallery = await Gallery.findAll(
-//                 {
-//                     where: {
-//                         'userPrimaryid': req.session.Id
-//                     }
-//                 }
-//             )
-//             res.status(200).json(getUserGallery)
-//         }catch(err){
-//             res.status(404).json({"message": "Image not found"})
-//         }
-//     }
-// )
 
 
 module.exports =

@@ -3,11 +3,13 @@ const fs = require('fs')
 //sql db
 const {Sequelize,Op} = require('sequelize')
 
-const { User,UserPf } = require('../model/user_model.js')
-const Gallery = require('../model/gallery_model')
+const { User,UserPf,Gallery,Tags } = require('../mysql_db.js')
 
 const express = require('express')
 const router = express.Router()
+
+//Все пользователи
+router.route("/users")
 
 //Поиск пользователя
 router.route("/user/:userName").get(
@@ -42,12 +44,11 @@ router.route("/user/:userName").get(
 router.route("/images/tags")
     .get(async function(req,res){
         try{
-            const tag = req.query.tags
-            const gotPictures = await Gallery.findAll({where:{
-                    'tags':{
-                        [Op.like]:`%${tag}%`
-                    }
-                }})
+            const tag_user = req.query.tags.split(',')
+            //get where tags from query are in photo tags
+            const gotPictures = await Gallery.findAll({
+                where:Sequelize.where(Sequelize.fn('find_in_set'),tag_user,Sequelize.col('tags'))
+            })
             res.status(200).json(gotPictures)
         }
         catch(err){
@@ -56,6 +57,5 @@ router.route("/images/tags")
         }
     })
 
-//router.route
 
 module.exports = router

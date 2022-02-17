@@ -6,9 +6,7 @@ const exphbs = require('express-handlebars')
 const handlebars = require('hbs')
 //DB
 const Sequelize = require('sequelize')
-const {
-    users
-}  = require('./mysql_db.js')
+const { users,User,UserPf,Gallery,Tags } = require('./mysql_db.js')
 
 //authentication router, authentication functions
 const auth_router = require('./router/authen.js')
@@ -99,9 +97,9 @@ app.listen(1000,()=>{
     )
     const connectDb = async function (){
         try{
-        await users.sync(
-            // {force:true}
-        )
+            await users.sync(
+                // {alter:true}
+            )
             console.log("Connected to DB")
     }catch(err){
             console.log(err)
