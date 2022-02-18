@@ -1,7 +1,7 @@
 const Sequelize = require('sequelize')
 const mysql = require('mysql2')
 
-const users = new Sequelize("verification","root","mySQLss120704",{
+const users = new Sequelize("verification","root",process.env.DER_PAROL,{
     dialect: "mysql",
     host: "localhost"
 })
