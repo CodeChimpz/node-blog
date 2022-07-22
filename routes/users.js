@@ -1,33 +1,47 @@
 const express = require('express')
+const uuid = require('uuid')
 
 const userRouter = express.Router()
-const postsRouter = express.Router({mergeParams:true})
 
+const  isAuth  = require('../middleware/auth')
 const userContr = require('../controllers/users')
-const postContr = require('../controllers/posts')
 
+const multer = require('multer')
 
+const fileStorage = multer.diskStorage({
+    destination:'public/images/pf_images',
+    filename:(req,file,callback)=>{
+        callback(null,uuid.v4()+'.'+file.mimetype.split('/')[1])
+    }
+})
+const fileFilter = function(req,file,callback){
+    if(file.mimetype==='image/png'||
+    file.mimetype==="image/jpg" ||
+    file.mimetype==="image/jpeg")
+    {
+        return callback(null,true)
+    }
+    callback(null,false)}
+
+const upload = multer({
+    storage:fileStorage,
+    filter:fileFilter,
+    limit:1024*1024})
+
+userRouter.route('/profile')
+    .post(isAuth,upload.single('image'),
+        userContr.editUserProfile)
+
+userRouter.route('/settings')
+    .get(isAuth,userContr.getUserSettings)
+    .post(isAuth,userContr.editUserSettings)
+
+//User profile handling
 userRouter.route('/:user')
-    .get(userContr.getUser)
+    .get(isAuth,userContr.getUser)
 
-userRouter.route('/:user/settings')
-    .get(userContr.getUserSettings)
-    .post(userContr.editUserSettings)
 
-postsRouter.route('/:post')
-    .get(postContr.getUserPost)
-    .post(postContr.createUserPost)
-    .put(postContr.editUserPost)
-    .delete(postContr.deleteUserPost)
 
-postsRouter.route('/feed')
-    .get(postContr.getFeed)
 
-postsRouter.route('/explore')
-    .get(postContr.getExp)
-
-postsRouter.get('/posts',postContr.getUserPosts)
-
-userRouter.use('/:post',postsRouter)
 
 module.exports = userRouter
