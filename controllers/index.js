@@ -1,18 +1,11 @@
-function getSignUp(req,res) {
-    res.send('signed up')
-}
-function getLogIn(req,res) {
-    //todo
-    res.send('logged in')
-}
 function getIndex(req,res) {
-    //
-    res.status(200).send("<h1>Index page</h1>")
+    res.status(200).json({result:"index"})
 }
 
-function get404(req,res) {
-    //
-    res.status(404).send("404 Page not found")
+function get404(req,res,next) {
+    const err = new Error('No such page exists')
+    err.status = 404
+    next(err)
 }
 
 module.exports={

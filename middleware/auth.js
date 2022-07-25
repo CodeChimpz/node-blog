@@ -13,7 +13,7 @@ module.exports = function isAuth (req,res,next) {
     try{
         const decodedToken = jwt.verify(token,process.env.SECRET);
         if(!decodedToken){
-            const error = new Error('Not authenticated')
+            const error = new Error(' authenticated')
             error.statusCode = 401
             throw error
         }

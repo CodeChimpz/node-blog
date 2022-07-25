@@ -27,7 +27,7 @@ async function getUserPosts(req,res){
 
 }
 
-function getUserPost(req,res) {
+function getUserPost(req,res,next) {
     const postId = req.params.post
     Post.findById(postId).populate('creator',['tag','name','profile'])
         .then(result=>{
@@ -40,10 +40,11 @@ function getUserPost(req,res) {
             }
         )
         .catch(err=>{
-            res.status(err.statusCode || 500).json({message:'error',error:err})
+            next(err)
         })
 }
-function createUserPost(req,res){
+
+function createUserPost(req,res,next){
     if(!req.files){
         const error = new Error('No image file provided')
         error.statusCode = 422
@@ -77,12 +78,11 @@ function createUserPost(req,res){
             res.status(201).json({message:"Post uploaded successfully!",post:newPost, userId:creator})
         })
         .catch(err=>{
-            console.log(err)
-            res.status(err.statusCode || 500).json({message:'error',error:err})
+            next(err)
         })
 }
 
-function editUserPost(req,res){
+function editUserPost(req,res,next){
     //validate user
     const postId = req.params.post
     const { content,tags,mentionedString } = req.body
@@ -129,12 +129,12 @@ function editUserPost(req,res){
     })
         .catch(
             err=>{
-                res.status(err.statusCode || 500).json({message:'error',error:err})
+                next(err)
             }
         )
 
 }
-function deleteUserPost(req,res){
+function deleteUserPost(req,res,next){
     const postId = req.params.post
     Post.findById(postId)
         .then(post=>{
@@ -164,8 +164,7 @@ function deleteUserPost(req,res){
             res.status(200).json({message:'Post deleted successfully'})}
         )
         .catch(err=>{
-            res.status(err.statusCode || 500).json({message:'error',error:err})
-            console.log(err)
+            next(err)
         })
 }
 

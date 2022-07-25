@@ -4,15 +4,17 @@ const JWT = require('jsonwebtoken')
 const User = require('../models/user')
 const {validationResult} = require('express-validator/check')
 
-exports.signUp = (req,res)=>{
+exports.signUp = (req,res,next)=>{
     const { name,tag,email,password } = req.body
     //Validation logic
     //handling input validation errors from express-validator
     const inputErrors = validationResult(req)
     if(!inputErrors.isEmpty()){
-            const error = new Error
+            const error = new Error(inputErrors.array()[0])
+            error.statusCode = 401
+            throw error
         }
-    User.findOne({'email':email})
+    return User.findOne({'email':email})
         .then(
             (emailCheck)=>{
                 if(emailCheck){
@@ -40,12 +42,13 @@ exports.signUp = (req,res)=>{
                     })})
         .then(
             ()=>{
-                res.status(201).send({message:'Signup was successful'})
+                res.status(201).json({message:'Signup was successful'})
+                return res
             }
         )
         .catch(err=>{
-            console.log(err)
-            res.status(err.statusCode || 500).json({message: 'error : '+ err.message, error: err})
+                next(err)
+                return err
         }
         )
 }
@@ -81,10 +84,10 @@ exports.signOut = (req,res,next)=>{
         )
 }
 
-exports.logIn = (req,res)=>{
+exports.logIn = (req,res,next)=>{
     const {email,password } = req.body
     let user_
-    User.findOne({email:email})
+    return User.findOne({email:email})
         .then(
             user=>{
                 if(!user){
@@ -109,12 +112,14 @@ exports.logIn = (req,res)=>{
                 },process.env.SECRET,{
                     expiresIn:'1h'
                 })
-                res.status(201).send({message:"Login successful",token:token,userId: user_._id.toString()})
+                res.status(201).json({message:"Login successful",token:token,userId: user_._id.toString()})
+                return res
             }
         )
         .catch(err=>
         {
-            console.log(err)
-            res.status(err.statusCode || 500).json({message: 'error : '+ err.message, error: err})}
+            next(err)
+            return err
+        }
         )
 }

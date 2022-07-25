@@ -14,14 +14,18 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "nodemon": "^2.0.19"
+    "chai": "^4.3.6",
+    "mocha": "^10.0.0",
+    "nodemon": "^2.0.19",
+    "sinon": "^14.0.0"
   },
   "name": "node-blogging-app",
   "version": "0.0.1",
   "description": "test node api for blogging app",
   "main": "app.js",
   "scripts": {
-    "test": "nodemon app.js",
+    "test": "mocha",
+    "dev": "nodemon app.js",
     "debug": "nodemon --inspect app.js"
   },
   "repository": {
