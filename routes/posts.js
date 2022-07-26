@@ -36,10 +36,6 @@ postsRouter.use(multer({
 //accessed through /posts/:post...
 postsRouter.post('/post',isAuth,postContr.createUserPost)
 
-postsRouter.route('/:post')
-    .get(postContr.getUserPost)
-    .put(isAuth,postContr.editUserPost)
-    .delete(isAuth,postContr.deleteUserPost)
 
 postsRouter.route('/feed')
     .get(postContr.getFeed)
@@ -50,6 +46,12 @@ postsRouter.route('/explore')
 postsRouter.route('/tags').get(
     postContr.getPostsByTags
 )
+
+postsRouter.route('/:post')
+    .get(postContr.getUserPost)
+    .put(isAuth,postContr.editUserPost)
+    .delete(isAuth,postContr.deleteUserPost)
+
 
 module.exports =
     postsRouter

@@ -51,7 +51,7 @@ function createUserPost(req,res,next){
         throw error
     }
     const {
-        content,tags,mentionedString
+        content,tagsString,mentionedString
     } = req.body
     //preparing data for model
     const gallery = req.files.map(img=>{
@@ -62,6 +62,7 @@ function createUserPost(req,res,next){
             size:img.size
             }}
     })
+    const tags = tagsString.split('#').splice(1,)
     //reference handling
     const creator = req.userId
     const newPost = new Post({
@@ -85,7 +86,7 @@ function createUserPost(req,res,next){
 function editUserPost(req,res,next){
     //validate user
     const postId = req.params.post
-    const { content,tags,mentionedString } = req.body
+    const { content,tagsString,mentionedString } = req.body
     Post.findById(postId)
         .then(post=>{
             if(!post){
@@ -93,35 +94,37 @@ function editUserPost(req,res,next){
                 error.statusCode = 404
                 throw error
             }
-            if(post.creator !== req.userId){
+            if(req.userId != post.creator){
                 const error = new Error('Not authorized to delete')
                 error.statusCode = 403
                 throw error
             }
-            if (req.files){
-                const newGallery = req.files.map(img=>{
-                    return {
-                        img_url:img.path,
-                        metadata:{
-                            encoding:img.encoding,
-                            mimetype:img.mimetype,
-                            size:img.size
-                        }}
-                })
-                //delete old images that are not resent in updated gallery
-                const urlArray = req.files.map(file=> {
-                    return file.path
-                })
-                post.gallery.forEach(img=>{
-                    if (!urlArray.includes(img.img_url)){
-                            removeImage(img)
-                        }
-                    }
-                )
-                post.gallery = newGallery
-            }
+            // if (req.files){
+            //     const newGallery = req.files.map(img=>{
+            //         return {
+            //             img_url:img.path,
+            //             metadata:{
+            //                 encoding:img.encoding,
+            //                 mimetype:img.mimetype,
+            //                 size:img.size
+            //             }}
+            //     })
+            //     //delete old images that are not resent in updated gallery
+            //     const urlArray = req.files.map(file=> {
+            //         return file.path
+            //     })
+            //     post.gallery.forEach(img=>{
+            //         if (!urlArray.includes(img.img_url)){
+            //                 removeImage(img)
+            //             }
+            //         }
+            //     )
+            //     post.gallery = newGallery
+            // }
+
+            //preparing data
             post.content = content
-            post.tags = tags
+            post.tags = tagsString.split('#').splice(1,)
             return post.save()
     })
         .then(result=>{
@@ -170,7 +173,24 @@ function deleteUserPost(req,res,next){
 
 //endpoint controllers for ->posts
 //get a set of posts for /posts '{tags:...}'
-function getPostsByTags(req,res){}
+async function getPostsByTags(req,res,next){
+    if(!req.query.tags){
+        return res.status(204).json({message:'no tags provided'})
+    }
+    tags = req.query.tags.split('#').splice(1,)
+    try{
+        const generated = await getWeightByTags(tags,Post)
+        if(!generated.length){
+            const error = new Error('No posts found with the tags!')
+            error.statusCode = 404
+            throw error
+        }
+        res.status(200).json({message:'success',posts:generated})
+    }
+    catch(err){
+        next(err)
+    }
+}
 
 function getFeed(req,res){}
 
@@ -185,16 +205,33 @@ function getExp(req,res){}
 
 
 //Helper functions
-function getPostsGallery(filter_,settings){
-
+async function getWeightByTags(tagsArr,modelGoose){
+    try{
+        const genArray = await modelGoose.find(
+            {tags:{$in:tagsArr}}
+        ).lean()
+        return genArray.map((elem)=>{
+            //array intersection power
+            let tagNum = 0
+            tagsArr.forEach(tag=>{
+                if(elem.tags.includes(tag)){
+                    tagNum++
+                }
+            })
+            //todo idk about float accuracy here and idc
+            const relevanceCoeff = tagNum/elem.tags.length
+            //
+            const weightInit = tagNum/tagsArr.length
+            elem._weight = weightInit * relevanceCoeff
+            return elem
+        })
+    }
+    catch(err){
+        console.log(err)
+        throw new Error(err.message)
+    }
 }
-function byTags(req,res,settings){}
 
-function byId(req,res,settings){}
-
-function forExp(req,res,settings){}
-
-function forFeed(req,res,settings){}
 
 //helper functions
 function removeImage(img){
@@ -212,7 +249,6 @@ module.exports = {
     editUserPost,
     deleteUserPost,
     createUserPost,
-    getUserPosts,
     getPostsByTags,
     getFeed,
     getExp
