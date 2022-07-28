@@ -62,7 +62,7 @@ function createUserPost(req,res,next){
             size:img.size
             }}
     })
-    const tags = tagsString.split('#').splice(1,)
+    const tags = tagsString.split('#')
     //reference handling
     const creator = req.userId
     const newPost = new Post({
@@ -124,7 +124,7 @@ function editUserPost(req,res,next){
 
             //preparing data
             post.content = content
-            post.tags = tagsString.split('#').splice(1,)
+            post.tags = tagsString.split('#')
             return post.save()
     })
         .then(result=>{
@@ -177,7 +177,7 @@ async function getPostsByTags(req,res,next){
     if(!req.query.tags){
         return res.status(204).json({message:'no tags provided'})
     }
-    tags = req.query.tags.split('#').splice(1,)
+    tags = req.query.tags.split('#')
     try{
         const generated = await getWeightByTags(tags,Post)
         if(!generated.length){
@@ -192,7 +192,9 @@ async function getPostsByTags(req,res,next){
     }
 }
 
-function getFeed(req,res){}
+async function getFeed(req,res,next){
+
+}
 
 function getExp(req,res){}
 
@@ -232,8 +234,6 @@ async function getWeightByTags(tagsArr,modelGoose){
     }
 }
 
-
-//helper functions
 function removeImage(img){
     fs.unlink(path.join(__dirname,'..',img.img_url),err=>{
         if(err){

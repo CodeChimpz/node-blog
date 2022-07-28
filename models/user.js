@@ -26,16 +26,41 @@ const userSchema = new Schema({
         status:String,
     },
     settings:{
-        foo1:{
-            type:String,
-        },
-        foo2:{
-            type:String,
-        },
-        foo3:{
-            type:String,
+        // foo1:{
+        //     type:String,
+        // },
+        // foo2:{
+        //     type:String,
+        // },
+        // foo3:{
+        //     type:String,
+        // }
+    },
+    subscrMe:[
+        {
+            tag:{type:String},
+            access:{
+                type:Number,
+                default:1
+            }
         }
-    }
+    ],
+    subscrI:[
+        {
+            tag:{
+                type:String
+            },
+            type:{
+                type:String,
+                default:'default'
+            },
+            notify:{
+                type:Boolean,
+                default:0
+            }
+        }
+    ]
+
 },{
     timestamps:true
 })

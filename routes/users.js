@@ -36,11 +36,22 @@ userRouter.route('/settings')
     .get(isAuth,userContr.getUserSettings)
     .post(isAuth,userContr.editUserSettings)
 
+//Subscription Handling
+userRouter.route('/follow/:user')
+    .post(isAuth,userContr.postToUserSubscr)
+    .delete(isAuth,userContr.delToUserSubscr)
+
+userRouter.route('/followers/:user')
+    .get(isAuth,userContr.getMyUserSubscr)
+    .put(isAuth,userContr.editMyUserSubscr)
+
+userRouter.route('/follows/:user')
+    .get(isAuth,userContr.getIUserSubscr)
+
+
 //User profile handling
 userRouter.route('/:user')
     .get(isAuth,userContr.getUser)
-
-
 
 
 

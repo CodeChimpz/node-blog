@@ -1,4 +1,5 @@
 const express = require('express')
+const { query }= require("express-validator")
 
 const postsRouter = express.Router()
 
@@ -38,12 +39,22 @@ postsRouter.post('/post',isAuth,postContr.createUserPost)
 
 
 postsRouter.route('/feed')
-    .get(postContr.getFeed)
+    .get(
+        postContr.getFeed
+    )
 
 postsRouter.route('/explore')
     .get(postContr.getExp)
 
 postsRouter.route('/tags').get(
+    [
+        query('tags').customSanitizer(tagString => {
+            if(tagString[0] == '#') tagString = tagString.substring(1,)
+            const lst = tagString.length - 1
+            if(tagString[lst] == '#') tagString = tagString.substring(0,lst)
+            return tagString
+        })
+    ],
     postContr.getPostsByTags
 )
 
