@@ -1,9 +1,14 @@
 const bcrypt = require('bcrypt')
 const JWT = require('jsonwebtoken')
+const nodemailer = require('nodemailer')
+const sendGrid = require('nodemailer-sendgrid-transport')
 
 const User = require('../models/user')
+const Token = require('../models/token')
 const {validationResult} = require('express-validator/check')
+const config = require('../config')
 
+//sign in and create account
 exports.signUp = (req,res,next)=>{
     const { name,tag,email,password } = req.body
     //Validation logic
@@ -52,7 +57,6 @@ exports.signUp = (req,res,next)=>{
         }
         )
 }
-
 //delete user account
 exports.signOut = (req,res,next)=>{
     const userId = req.userId
@@ -83,43 +87,128 @@ exports.signOut = (req,res,next)=>{
             }
         )
 }
-
-exports.logIn = (req,res,next)=>{
-    const {email,password } = req.body
-    let user_
-    return User.findOne({email:email})
-        .then(
-            user=>{
-                if(!user){
-                    const error = new Error('user was not found')
-                    error.statusCode = 401
-                    throw error
-                }
-                user_= user
-                return bcrypt.compare(password, user.password)
-            }
-        )
-        .then(
-            checkPass=>{
-                if(!checkPass){
-                    const error = new Error('wrong password')
-                    error.statusCode = 401
-                    throw error
-                }
-                const token = JWT.sign({
-                    email:user_.email,
-                    userId:user_._id.toString()
-                },process.env.SECRET,{
-                    expiresIn:'1h'
-                })
-                res.status(201).json({message:"Login successful",token:token,userId: user_._id.toString()})
-                return res
-            }
-        )
-        .catch(err=>
-        {
-            next(err)
-            return err
+//login and get the jwt tokens
+exports.logIn = async (req,res,next)=>{
+    try{
+        const {email,password } = req.body
+        const user = await User.findOne({email:email})
+        if(!user){
+            const error = new Error('user was not found')
+            error.statusCode = 401
+            throw error
         }
-        )
+        const checkPass = await bcrypt.compare(password, user.password)
+        if(!checkPass){
+            const error = new Error('wrong password')
+            error.statusCode = 401
+            throw error
+        }
+
+        const token = JWT.sign({
+                email:user.email,
+                userId:user._id.toString()
+            },config.jwtSecret,{
+                expiresIn:config.jwtLife
+            })
+
+        const prevToken = user.refreshToken
+        const refreshToken = JWT.sign({
+                email:user.email,
+                userId:user._id.toString(),
+            },
+            config.refreshSecret,{
+                expiresIn:config.refreshLife
+            })
+        //save refresh token to DB
+        const newToken = new Token({
+            user:user._id,
+            previous:prevToken,
+            token:refreshToken
+        })
+        await newToken.save()
+
+        res.status(201).json({message:"Login successful",token:token,refreshToken:refreshToken,userId: user._id.toString()})
+
+        return res
+    }catch(err) {
+        next(err)
+    }
 }
+
+exports.logOut = async (req,res,next)=>{
+    try{
+        const userId = req.userId
+        const token = await Token.findOneAndRemove({'user':userId})
+        //todo cookie and refresh token service
+        res.status(201).json({message:'Succesful logout'})
+    }
+    catch(err){
+        next(err)
+    }
+}
+
+exports.refreshToken = async (req,res,next)=>{
+    try{
+        //check for refresh token being provided and corresoding to user who sent it in , otherwise 401
+        const { refreshToken } = req.body
+        const userId = req.userId
+        const user = await User.findOne({'user':userId})
+        if(!user || !refreshToken){
+            const err = new Error('unauthenticated error')
+            err.statusCode = 401
+            throw err
+        }
+        //check for token reuse, remove refresh token from database if reuse noticed
+        //user will have to relogin after access token expires
+        const tokenUsedCheck = await Token.findOne({'previous':refreshToken})
+        if(tokenUsedCheck){
+            await Token.findOneAndRemove({'token':refreshToken})
+            const err = new Error('unauthenticated error')
+            err.statusCode = 401
+            throw err
+        }
+        //issue new refresh/access pair
+         const token = JWT.sign({
+             email:user.email,
+             userId:user._id.toString()
+         },
+             config.jwtSecret,{
+             expiresIn:config.jwtLife
+             })
+        const newRefreshToken = JWT.sign({
+                email:user.email,
+                userId:user._id.toString(),
+            },
+            config.refreshSecret,{
+                expiresIn:config.refreshLife})
+        //encode previous token data and add new refresh token to db
+        const newToken = new Token({
+            user:user._id,
+            previous:refreshToken,
+            token:newRefreshToken
+        })
+        await newToken.save()
+        res.status(201).json({message:"Token refreshed successfully",token:token,refreshToken:newRefreshToken,userId: user._id.toString()})
+    }catch(err){
+        next(err)
+    }
+}
+
+exports.revokeToken = (req,res,next)=>{
+    try{
+
+    }catch(err){
+        next(err)
+    }
+}
+
+//admin functionality
+
+//initiate reset password
+// exports.pwdSendResetToken = (req,res,next)=>{
+//
+// }
+// //provide pwd reset
+// exports.pwdResetPassword = (req,res,next)=>{
+//
+// }

@@ -10,18 +10,28 @@ const authContr = require('../controllers/auth')
 router.route('/signup')
     // .get(getSignUp)
     .post(
-        [
-        body('email').trim().isEmail().withMessage('Invalid Email').normalizeEmail(),
-        body('password').trim().isLength({min:8}).withMessage('Password should be of at least 8 characteers'),
-        body('tag').trim().isLength({min:3}).isAlphanumeric().withMessage('Invalid Usertag')
-    ],
+            [
+            body('email').trim().isEmail().withMessage('Invalid Email').normalizeEmail(),
+            body('password').trim().isLength({min:8}).withMessage('Password should be of at least 8 characteers'),
+            body('tag').trim().isLength({min:3}).isAlphanumeric().withMessage('Invalid Usertag')
+        ],
         authContr.signUp)
 
 router.route('/login')
     // .get(getLogIn)
     .post(authContr.logIn)
 
-router.route('/delete')
-    .post(isAuth,authContr.signOut)
+router.route('/refreshToken')
+    .post(authContr.refreshToken)
+
+router.route('/logout')
+    .get(authContr.logOut)
+
+router.route('/signout')
+    .post(isAuth,
+        [
+            body('email').trim().isEmail().withMessage('Invalid Email').normalizeEmail(),
+        ],
+        authContr.signOut)
 
 module.exports = router

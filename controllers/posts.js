@@ -86,7 +86,7 @@ function createUserPost(req,res,next){
 function editUserPost(req,res,next){
     //validate user
     const postId = req.params.post
-    const { content,tagsString,mentionedString } = req.body
+    const { content, tagsString } = req.body
     Post.findById(postId)
         .then(post=>{
             if(!post){
@@ -99,32 +99,31 @@ function editUserPost(req,res,next){
                 error.statusCode = 403
                 throw error
             }
-            // if (req.files){
-            //     const newGallery = req.files.map(img=>{
-            //         return {
-            //             img_url:img.path,
-            //             metadata:{
-            //                 encoding:img.encoding,
-            //                 mimetype:img.mimetype,
-            //                 size:img.size
-            //             }}
-            //     })
-            //     //delete old images that are not resent in updated gallery
-            //     const urlArray = req.files.map(file=> {
-            //         return file.path
-            //     })
-            //     post.gallery.forEach(img=>{
-            //         if (!urlArray.includes(img.img_url)){
-            //                 removeImage(img)
-            //             }
-            //         }
-            //     )
-            //     post.gallery = newGallery
-            // }
-
+            if (req.files){
+                const newGallery = req.files.map(img=>{
+                    return {
+                        img_url:img.path,
+                        metadata:{
+                            encoding:img.encoding,
+                            mimetype:img.mimetype,
+                            size:img.size
+                        }}
+                })
+                //delete old images that are not resent in updated gallery
+                const urlArray = req.files.map(file=> {
+                    return file.path
+                })
+                post.gallery.forEach(img=>{
+                    if (!urlArray.includes(img.img_url)){
+                            removeImage(img)
+                        }
+                    }
+                )
+                post.gallery = newGallery
+            }
             //preparing data
-            post.content = content
-            post.tags = tagsString.split('#')
+            if (content) post.content = content
+            if (tagsString) post.tags = tagsString.split('#')
             return post.save()
     })
         .then(result=>{
