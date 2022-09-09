@@ -18,9 +18,11 @@ const { getIndex,get404} = require('./controllers/index')
 const authRouter = require('./routes/auth')
 const usersRouter = require('./routes/users')
 const postsRouter  = require('./routes/posts')
+const adminRouter = require('./routes/admin')
 
 app.use('/posts',postsRouter)
 app.use('/auth',authRouter)
+app.use('/admin',adminRouter)
 app.use(usersRouter)
 
 // loading index page

@@ -1,7 +1,8 @@
 const bcrypt = require('bcrypt')
 const JWT = require('jsonwebtoken')
-const nodemailer = require('nodemailer')
-const sendGrid = require('nodemailer-sendgrid-transport')
+
+// const nodemailer = require('nodemailer')
+// const sendGrid = require('nodemailer-sendgrid-transport')
 
 const User = require('../models/user')
 const Token = require('../models/token')
