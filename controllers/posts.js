@@ -27,7 +27,7 @@ async function getUserPosts(req,res){
 
 }
 
-function getUserPost(req,res) {
+function getUserPost(req,res,next) {
     const postId = req.params.post
     Post.findById(postId).populate('creator',['tag','name','profile'])
         .then(result=>{
@@ -40,17 +40,18 @@ function getUserPost(req,res) {
             }
         )
         .catch(err=>{
-            res.status(err.statusCode || 500).json({message:'error',error:err})
+            next(err)
         })
 }
-function createUserPost(req,res){
+
+function createUserPost(req,res,next){
     if(!req.files){
         const error = new Error('No image file provided')
         error.statusCode = 422
         throw error
     }
     const {
-        content,tags,mentionedString
+        content,tagsString,mentionedString
     } = req.body
     //preparing data for model
     const gallery = req.files.map(img=>{
@@ -61,6 +62,7 @@ function createUserPost(req,res){
             size:img.size
             }}
     })
+    const tags = tagsString.split('#')
     //reference handling
     const creator = req.userId
     const newPost = new Post({
@@ -77,15 +79,14 @@ function createUserPost(req,res){
             res.status(201).json({message:"Post uploaded successfully!",post:newPost, userId:creator})
         })
         .catch(err=>{
-            console.log(err)
-            res.status(err.statusCode || 500).json({message:'error',error:err})
+            next(err)
         })
 }
 
-function editUserPost(req,res){
+function editUserPost(req,res,next){
     //validate user
     const postId = req.params.post
-    const { content,tags,mentionedString } = req.body
+    const { content, tagsString } = req.body
     Post.findById(postId)
         .then(post=>{
             if(!post){
@@ -93,7 +94,7 @@ function editUserPost(req,res){
                 error.statusCode = 404
                 throw error
             }
-            if(post.creator !== req.userId){
+            if(req.userId != post.creator){
                 const error = new Error('Not authorized to delete')
                 error.statusCode = 403
                 throw error
@@ -120,8 +121,9 @@ function editUserPost(req,res){
                 )
                 post.gallery = newGallery
             }
-            post.content = content
-            post.tags = tags
+            //preparing data
+            if (content) post.content = content
+            if (tagsString) post.tags = tagsString.split('#')
             return post.save()
     })
         .then(result=>{
@@ -129,12 +131,12 @@ function editUserPost(req,res){
     })
         .catch(
             err=>{
-                res.status(err.statusCode || 500).json({message:'error',error:err})
+                next(err)
             }
         )
 
 }
-function deleteUserPost(req,res){
+function deleteUserPost(req,res,next){
     const postId = req.params.post
     Post.findById(postId)
         .then(post=>{
@@ -164,16 +166,34 @@ function deleteUserPost(req,res){
             res.status(200).json({message:'Post deleted successfully'})}
         )
         .catch(err=>{
-            res.status(err.statusCode || 500).json({message:'error',error:err})
-            console.log(err)
+            next(err)
         })
 }
 
 //endpoint controllers for ->posts
 //get a set of posts for /posts '{tags:...}'
-function getPostsByTags(req,res){}
+async function getPostsByTags(req,res,next){
+    if(!req.query.tags){
+        return res.status(204).json({message:'no tags provided'})
+    }
+    tags = req.query.tags.split('#')
+    try{
+        const generated = await getWeightByTags(tags,Post)
+        if(!generated.length){
+            const error = new Error('No posts found with the tags!')
+            error.statusCode = 404
+            throw error
+        }
+        res.status(200).json({message:'success',posts:generated})
+    }
+    catch(err){
+        next(err)
+    }
+}
 
-function getFeed(req,res){}
+async function getFeed(req,res,next){
+
+}
 
 function getExp(req,res){}
 
@@ -186,18 +206,33 @@ function getExp(req,res){}
 
 
 //Helper functions
-function getPostsGallery(filter_,settings){
-
+async function getWeightByTags(tagsArr,modelGoose){
+    try{
+        const genArray = await modelGoose.find(
+            {tags:{$in:tagsArr}}
+        ).lean()
+        return genArray.map((elem)=>{
+            //array intersection power
+            let tagNum = 0
+            tagsArr.forEach(tag=>{
+                if(elem.tags.includes(tag)){
+                    tagNum++
+                }
+            })
+            //todo idk about float accuracy here and idc
+            const relevanceCoeff = tagNum/elem.tags.length
+            //
+            const weightInit = tagNum/tagsArr.length
+            elem._weight = weightInit * relevanceCoeff
+            return elem
+        })
+    }
+    catch(err){
+        console.log(err)
+        throw new Error(err.message)
+    }
 }
-function byTags(req,res,settings){}
 
-function byId(req,res,settings){}
-
-function forExp(req,res,settings){}
-
-function forFeed(req,res,settings){}
-
-//helper functions
 function removeImage(img){
     fs.unlink(path.join(__dirname,'..',img.img_url),err=>{
         if(err){
@@ -213,7 +248,6 @@ module.exports = {
     editUserPost,
     deleteUserPost,
     createUserPost,
-    getUserPosts,
     getPostsByTags,
     getFeed,
     getExp

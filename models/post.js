@@ -18,9 +18,9 @@ const postSchema = new Schema({
         content:{
             type:String
         },
-        tags:{
-            type:String
-        },
+        tags:[
+            {type:String}
+        ],
         creator:{
             type: Schema.Types.ObjectId,
             ref:'User'

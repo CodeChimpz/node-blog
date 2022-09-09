@@ -1,13 +1,14 @@
 const express = require('express')
+const { query,body }= require("express-validator")
+const multer = require('multer')
+const uuid = require('uuid')
 
 const postsRouter = express.Router()
 
-const  postContr = require('../controllers/posts')
-
+const postContr = require('../controllers/posts')
 const isAuth  = require('../middleware/auth')
+const customValid = require('../middleware/custom-valid')
 
-const multer = require('multer')
-const uuid = require('uuid')
 
 const fileStorage = multer.diskStorage({
     destination:(req,file,callback)=>{
@@ -30,26 +31,34 @@ const fileFilter = (req,file,callback)=>{
 postsRouter.use(multer({
     storage:fileStorage,
     filter:fileFilter,
-    limit:1024*1024})
+    limit:1024*1024}
+    )
     .array('image',10))
 
 //accessed through /posts/:post...
-postsRouter.post('/post',isAuth,postContr.createUserPost)
+postsRouter.post('/post',
+    [
+        body('tagsString').customSanitizer(customValid.tagStringSanitizer)
+    ],
+    isAuth,postContr.createUserPost)
+
+postsRouter.route('/tags').get(
+    [
+        //sanitize string of tags to have 'foo#foo#foo' format (for further splice)
+        query('tags').customSanitizer(customValid.tagStringSanitizer)
+    ],
+    postContr.getPostsByTags
+)
 
 postsRouter.route('/:post')
     .get(postContr.getUserPost)
-    .put(isAuth,postContr.editUserPost)
+    .put(isAuth,
+        [
+            body('tagsString').customSanitizer(customValid.tagStringSanitizer)
+        ],
+        postContr.editUserPost)
     .delete(isAuth,postContr.deleteUserPost)
 
-postsRouter.route('/feed')
-    .get(postContr.getFeed)
-
-postsRouter.route('/explore')
-    .get(postContr.getExp)
-
-postsRouter.route('/tags').get(
-    postContr.getPostsByTags
-)
 
 module.exports =
     postsRouter
