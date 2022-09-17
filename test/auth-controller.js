@@ -3,9 +3,9 @@ const sinon = require('sinon')
 const mongoose = require('mongoose')
 require('dotenv').config()
 const bcrypt = require('bcrypt')
-const User = require('../models/user')
-const auth = require('../controllers/auth')
-const errMw = require('../middleware/errors')
+const User = require('../src/models/user')
+const auth = require('../src/controllers/auth')
+const errMw = require('../src/middleware/errors')
 
 describe('Signup controller',()=>{
     before((done)=>{

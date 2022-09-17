@@ -5,9 +5,9 @@ const uuid = require('uuid')
 
 const postsRouter = express.Router()
 
-const postContr = require('../controllers/posts')
+const postContr = require('../controllers').postsController
 const isAuth  = require('../middleware/auth')
-const customValid = require('../middleware/custom-valid')
+const customValid = require('../middleware/custom-validation')
 
 
 const fileStorage = multer.diskStorage({

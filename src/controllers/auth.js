@@ -1,12 +1,11 @@
 const bcrypt = require('bcrypt')
 const JWT = require('jsonwebtoken')
-const nodemailer = require('nodemailer')
-const sendGrid = require('nodemailer-sendgrid-transport')
-
-const User = require('../models/user')
-const Token = require('../models/token')
-const {validationResult} = require('express-validator/check')
-const config = require('../config')
+// const nodemailer = require('nodemailer')
+// const sendGrid = require('nodemailer-sendgrid-transport')
+const User = require('../models').User
+const Token = require('../models').Token
+const { validationResult } = require('express-validator/check')
+const config = require('../config.json')
 
 //sign in and create account
 exports.signUp = (req,res,next)=>{
