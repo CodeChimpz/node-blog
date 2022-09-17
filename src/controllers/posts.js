@@ -1,6 +1,6 @@
 //endpoint controllers for /user/:post
-const Post = require('../models/post')
-const User = require('../models/user')
+const Post = require('../models').Post
+const User = require('../models').User
 
 const fs = require('fs')
 const path = require('path')

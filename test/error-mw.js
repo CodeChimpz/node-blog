@@ -1,7 +1,7 @@
 const chai = require('chai')
 const sinon = require('sinon')
 
-const errMw = require('../middleware/errors')
+const errMw = require('../src/middleware/errors')
 
 describe('Error handler',()=>{
     const res = {

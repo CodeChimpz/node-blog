@@ -1,4 +1,5 @@
-const Token = require('../models/token')
+const Token = require('../models').Token
+
 exports.getRefreshTokenFamily = async (req,res,next)=>{
     try{
         const token = req.body.refreshToken

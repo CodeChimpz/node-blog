@@ -4,7 +4,7 @@ const uuid = require('uuid')
 const userRouter = express.Router()
 
 const  isAuth  = require('../middleware/auth')
-const userContr = require('../controllers/users')
+const userContr = require('../controllers').usersController
 
 const multer = require('multer')
 

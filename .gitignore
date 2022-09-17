@@ -2,4 +2,4 @@
 /.idea/
 /public/images/
 /.env
-/config.json
+/src/config.json
