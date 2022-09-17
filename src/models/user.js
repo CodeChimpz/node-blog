@@ -26,15 +26,6 @@ const userSchema = new Schema({
         status:String,
     },
     settings:{
-        // foo1:{
-        //     type:String,
-        // },
-        // foo2:{
-        //     type:String,
-        // },
-        // foo3:{
-        //     type:String,
-        // }
     },
     subscrMe:[
         {
@@ -67,7 +58,7 @@ const userSchema = new Schema({
 
 userSchema.virtual('posts',{
     ref:'Post',
-    localField:'_id',
+    localField:'tag',
     foreignField:'creator'
 })
 

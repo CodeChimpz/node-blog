@@ -5,28 +5,13 @@ const userRouter = express.Router()
 
 const  isAuth  = require('../middleware/auth')
 const userContr = require('../controllers').usersController
+const multer = require('../util').multer
 
-const multer = require('multer')
-
-const fileStorage = multer.diskStorage({
-    destination:'public/images/pf_images',
-    filename:(req,file,callback)=>{
-        callback(null,uuid.v4()+'.'+file.mimetype.split('/')[1])
-    }
-})
-const fileFilter = function(req,file,callback){
-    if(file.mimetype==='image/png'||
-    file.mimetype==="image/jpg" ||
-    file.mimetype==="image/jpeg")
-    {
-        return callback(null,true)
-    }
-    callback(null,false)}
-
-const upload = multer({
-    storage:fileStorage,
-    filter:fileFilter,
-    limit:1024*1024})
+const upload = multer(
+    './public/images/pf_images',
+    ['image/png','image/jpg','image/jpeg'],
+    {limit:1024*1024}
+)
 
 userRouter.route('/profile')
     .post(isAuth,upload.single('image'),

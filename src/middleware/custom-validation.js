@@ -1,8 +1,9 @@
-exports.tagStringSanitizer = (tagString) => {
-    if(tagString) {
-        if (tagString[0] == '#') tagString = tagString.substring(1,)
-        const lst = tagString.length - 1
-        if (tagString[lst] == '#') tagString = tagString.substring(0, lst)
-        return tagString
+exports.tagStringSanitizer = (tags) => {
+    if(tags) {
+        if (tags[0] == '#') tags = tags.substring(1,)
+        const lst = tags.length - 1
+        if (tags[lst] == '#') tags = tags.substring(0, lst)
+        tags = tags.split('#')
+        return tags
     }
 }
