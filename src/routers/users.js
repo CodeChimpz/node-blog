@@ -13,7 +13,9 @@ const upload = multer(
     {limit:1024*1024}
 )
 
+//
 userRouter.route('/profile')
+    .get(isAuth,userContr.getUserProfile)
     .post(isAuth,upload.single('image'),
         userContr.editUserProfile)
 
@@ -22,11 +24,11 @@ userRouter.route('/settings')
     .post(isAuth,userContr.editUserSettings)
 
 //Subscription Handling
-userRouter.route('/follow/:user')
+userRouter.route('/:user/followers')
     .post(isAuth,userContr.postToUserSubscr)
     .delete(isAuth,userContr.delToUserSubscr)
 
-userRouter.route('/followers/:user')
+userRouter.route('/:user/followers')
     .get(isAuth,userContr.getMyUserSubscr)
     .put(isAuth,userContr.editMyUserSubscr)
 
@@ -36,7 +38,7 @@ userRouter.route('/follows/:user')
 
 //User profile handling
 userRouter.route('/:user')
-    .get(isAuth,userContr.getUser)
+    .get(isAuth,userContr.getUserPage)
 
 
 

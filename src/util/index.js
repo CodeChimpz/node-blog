@@ -1,5 +1,5 @@
 const tagSearch = require('./tag-search')
-const files = require('./file-operations')
+const files = require('./files')
 const multer = require('./multer-helper')
 
 exports.tagSearch = tagSearch

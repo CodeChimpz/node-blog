@@ -2,14 +2,15 @@
 const Post = require('../models').Post
 const User = require('../models').User
 
-
 const files = require('../util').files
 const tagSearch = require('../util').tagSearch
 
 
 exports.getUserPost = async (req,res,next) => {
     try{
+        //get info from request
         const postId = req.params.post
+        //
         const post = await Post.findById(postId).populate('creator',['tag','name','profile'])
         if(!post){
             return res.status(404).json({message:"No such post"})
@@ -22,10 +23,10 @@ exports.getUserPost = async (req,res,next) => {
 
 exports.createUserPost = async (req,res,next) => {
     try{
+        //get info from request
         if(!req.files[0]){
             return res.status(422).json({message:"No image file provided !"})
         }
-        //todo: DTO
         const {content,tags} = req.body
         const gallery = req.files.map(img=>{
             return {img_url:img.path,
@@ -35,6 +36,7 @@ exports.createUserPost = async (req,res,next) => {
                     size:img.size
                 }}
         })
+        //
         const creator = await User.findById(req.userId).select('tag')
         if(!creator){
             return res.status(403).json({message:"Not authorized to perform this action"})
@@ -52,8 +54,7 @@ exports.createUserPost = async (req,res,next) => {
 
 exports.editUserPost = async (req,res,next) => {
     try{
-        //validate user
-
+        //get info from request
         const postId = req.params.post
         const { content, tags } = req.body
 

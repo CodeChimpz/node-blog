@@ -1,126 +1,135 @@
 const User = require('../models').User
-const fs = require('fs')
-const path = require('path')
+const files = require('../util').files
 
-function getUser(req,res,next) {
-    const userToGet = req.params.user
-    let urPage = false
-    User.findOne({tag:userToGet}).populate('posts').then(
-        user=>{
-            if(!user){
-                const err = new Error('No such user')
-                err.statusCode = 404
-                throw err
-            }
-            const userToPresent = {}
-            if (req.userId == user._id){
-                urPage = true
-            }
-            userToPresent.tag = user.tag
-            userToPresent.name = user.name
-            userToPresent.profile = user.profile
-            userToPresent.posts = user.posts
-            return userToPresent
-        }
-    )
-        .then(result=>{
-            res.status(200).json({message:"user profile loaded successfully",urPage,result})
-        })
-        .catch(err=>{
-            next(err)
-        })
-}
-function editUserProfile (req,res,next){
-    const userId = req.userId
-    const newStatus = req.body.status
-    const pfImgPath = req.file.path
-    User.findById(userId)
-        .then(
-        user=>{
-            if(user.profile.pf_img!==pfImgPath && user.profile.pf_img){
-                fs.unlink( path.join(__dirname,'..',user.profile.pf_img),err=>{
-                    if(err){
-                        const error = new Error
-                        error.message = err
-                        throw error
-                    }
-                })
-            }
-            user.profile.pf_img = pfImgPath
-            user.profile.status = newStatus
-            return user.save()
-        }
-    )
-        .then(result=>{
-            res.status(200).json({message:'',result})
-        })
-        .catch(
-            err=>{
-                next(err)
-            }
-        )
-}
-
-function getUserSettings(req,res,next) {
-    const userId = req.userId
-    User.findById(userId)
-        .then(
-            user=>{
-                if(!user){
-                    const err = new Error('No such user')
-                    err.statusCode = 404
-                    throw err
-                }
-                res.status(200).json({message:'',result:user.settings})
-            }
-    )
-        .catch(
-            err=>{
-                next(err)
-            }
-        )
-}
-function editUserSettings(req,res,next){
-    const userId = req.userId
-    const newSettings = req.body.settings
-    User.findById(userId)
-        .then(
-            user=>{
-                user.settings = newSettings
-                return user.save()
-            }
-        )
-        .then(
-            result=>{
-                res.status(200).json({message:'Settings updated'})
-            }
-        )
-        .catch(err=>{
-            next(err)
-        })
-}
-
-async function postToUserSubscr(req,res,next){
+exports.getUserPage = async (req,res,next)=>{
     try{
+        //get info from request
+        const userToGet = req.params.user
+        //
+        let urPage = false
+        const user = await User.findOne({tag:userToGet}).populate('posts')
+        if(!user){
+            return res.status(404).json({message:"No such user"})
+        }
+        if (req.userId == user._id){
+            urPage = true
+        }
+        //response formulation
+        reponseObj = {
+            tag:user.tag,
+            name:user.name,
+            profile:user.profile,
+            posts:user.posts
+        }
+        res.status(200).json({message:"user profile loaded successfully",urPage,reponseObj})
+
+    }catch(err){
+        next(err)
+    }
+}
+
+exports.getUSerProfile = async (req,res,next)=>{
+    try{
+        //get info from request
+        const userId = req.userId
+        //
+        const user = await User.findOne({userId:userId}).populate('posts')
+        const reponseObj = {
+            tag:user.tag,
+            name:user.name,
+            profile:user.profile,
+        }
+        res.status(200).json({message:"user profile loaded successfully",urPage,reponseObj})
+
+    }catch(err){
+        next(err)
+    }
+}
+
+exports.getUserSettings = async (req,res,next) => {
+    try{
+        //get info from request
+        const userId = req.userId
+        //
+        const user = await User.findById(userId)
+        if(!user){
+            return res.status(404).json({message:"No such user"})
+        }
+        //
+        const reponseObj = {
+            tag:user.tag,
+            name:user.name,
+            profile:user.profile,
+        }
+        res.status(200).json({message:'',result:reponseObj})
+
+    }catch(err){
+        next(err)
+    }
+}
+
+exports.editUserProfile = async (req,res,next)=>{
+    try{
+        //get info from request
+        const userId = req.userId
+        const newStatus = req.body.status
+        const pfImgPath = req.file.path
+        //
+        const user = await User.findById(userId)
+        if(user.profile.pf_img !== pfImgPath && user.profile.pf_img){
+            if (files.removeImage(user.profile.pf_img)) throw new Error('Unlink error')
+        }
+        user.profile.pf_img = pfImgPath
+        user.profile.status = newStatus
+        user.save()
+        //response formulation
+        const reponseObj = {
+            tag:user.tag,
+            name:user.name,
+            profile:user.profile,
+        }
+        res.status(200).json({message:'',reponseObj})
+
+    }catch(err){
+        next(err)
+    }
+}
+
+exports.editUserSettings = async (req,res,next) => {
+    try{
+        //get info from request
+        const userId = req.userId
+        const newSettings = req.body.settings
+        //
+        const user = await User.findById(userId)
+        user.settings = newSettings
+        user.save()
+        //
+        res.status(200).json({message:'Settings updated'})
+    }catch(err){
+        next(err)
+    }
+}
+
+//subscribe to a user
+exports.postSubscription = async (req,res,next)=>{
+    try{
+        //get info from request
         const userToName = req.params.user
         const userById = req.userId
-        //parse body
         const subscrType = req.body.subscrType
         const notify = req.body.notification
         //check user existance and authentiaction
         const userTo =  await User.findOne({tag:userToName})
         const userBy = await User.findById(userById)
         if(!userBy || !userTo){
-            const err = new Error(`${!userBy ? 'Not authenticated!' : `Invalid subject to subscribe to - ${userToName}!`}`)
-            err.statusCode = 404
-            throw err
+            const reason = `${!userBy ? 'Not authenticated!' : `Invalid subject to subscribe to - ${userToName}!`}`
+            return res.status(404).json({message:reason})
         }
         if (userTo.subscrMe.find(sub=>{
             if(userBy.tag === sub.tag) return true
         })){
-            const err = new Error('Already subscribed to that user')
-            err.statusCode = 300
-            throw err
+            res.status(300).json({message:'Already subscribed to that user'})
         }
         userTo.subscrMe.push({
             tag:userBy.tag
@@ -133,7 +142,7 @@ async function postToUserSubscr(req,res,next){
         await userTo.save()
         await userBy.save()
         res.status(200).json({
-            message:'Subscribed to '+userToName,
+            message:'Subscribed to '+ userToName,
             result:userBy.subscrI
         })
     }
@@ -142,11 +151,11 @@ async function postToUserSubscr(req,res,next){
     }
 }
 
-async function editToUserSubscr(eq,res,next){
+exports.editToUserSubscr = async (req,res,next)=>{
 
 }
 
-async function delToUserSubscr(req,res,next){
+exports.delToUserSubscr = async (req,res,next) => {
     try{
         const userToName = req.params.user
         const userById = req.userId
@@ -154,9 +163,8 @@ async function delToUserSubscr(req,res,next){
         const userTo =  await User.findOne({tag:userToName})
         const userBy = await User.findById(userById)
         if(!userBy || !userTo){
-            const err = new err(`${!userBy ? 'Not authenticated!' : `Invalid subject to unsunscribe from - ${userToName}!`}`)
-            err.statusCode = 404
-            throw err
+            const reason = `${!userBy ? 'Not authenticated!' : `Invalid subject to subscribe to - ${userToName}!`}`
+            return res.status(404).json({message:reason})
         }
 
         await User.findOneAndUpdate({tag:userToName},{$pull:{subscrMe:{tag:userBy.tag}}})
@@ -173,15 +181,13 @@ async function delToUserSubscr(req,res,next){
 }
 
 
-async function getMyUserSubscr(req,res,next){
+exports.getMyUserSubscr = async (req,res,next) => {
         try{
             const userId = req.userId
         const userTag = req.params.user
         const user = await User.findOne({tag:userTag})
         if(!user){
-            const err = new Error('No such user!')
-            err.statusCode = 404
-            throw err
+            return res.status(404).json({message:'No such user!'})
         }
         let result
         if(userId != user._id){
@@ -200,7 +206,7 @@ async function getMyUserSubscr(req,res,next){
         }
 }
 
-async function editMyUserSubscr(req,res,next){
+exports.editMyUserSubscr = async (req,res,next) => {
         try{
             const userId = req.userId
             const userToTag = req.body.tag
@@ -208,9 +214,7 @@ async function editMyUserSubscr(req,res,next){
             //
             const user = await User.findOne({tag:userToTag})
             if(!user){
-                const err = new Error('No such user!')
-                err.statusCode = 404
-                throw err
+                return res.status(404).json({message:'No such user!'})
             }
             //
             const result = await User.findByIdAndUpdate(userId,{$set:{subscrMe:{
@@ -226,15 +230,13 @@ async function editMyUserSubscr(req,res,next){
         }
 }
 
-async function getIUserSubscr(req,res,next){
+exports.getIUserSubscr = async (req,res,next) => {
     try{
         const userId = req.userId
         const userTag = req.params.user
         const user = await User.findOne({tag:userTag})
         if(!user){
-            const err = new Error('No such user!')
-            err.statusCode = 404
-            throw err
+            return res.status(404).json({message:'No such user!'})
         }
         let result
         if(userId != user._id){
@@ -254,15 +256,3 @@ async function getIUserSubscr(req,res,next){
     }
 }
 
-module.exports = {
-        getUser,
-        editUserProfile,
-        getUserSettings,
-        editUserSettings,
-        postToUserSubscr,
-        delToUserSubscr,
-        editToUserSubscr,
-        getMyUserSubscr,
-        editMyUserSubscr,
-    getIUserSubscr
-    }

@@ -52,7 +52,7 @@ exports.signOut = async (req,res,next)=>{
         }
         const deleted = await User.findByIdAndRemove(userId)
 
-        res.status(200).json({message:"User successfully unalived !",result:deleted})
+        res.status(200).json({message:"User successfully unalived !"})
         req.userId = null
 
     }catch(err){
@@ -95,7 +95,9 @@ exports.logIn = async (req,res,next)=>{
         })
         await newToken.save()
 
-        return res.status(201).json({message:"Login successful",token:token,refreshToken:refreshToken,userId: user._id.toString()})
+        return res.status(201).json({message:"Login successful",token:token,refreshToken:refreshToken,
+            // userId: user._id.toString()
+        })
     }catch(err) {
         next(err)
     }
@@ -120,18 +122,14 @@ exports.refreshToken = async (req,res,next)=>{
         const userId = req.userId
         const user = await User.findOne({'user':userId})
         if(!user || !refreshToken){
-            const err = new Error('unauthenticated error')
-            err.statusCode = 401
-            throw err
+            res.status(401).json({message:"Not authenticated"})
         }
         //check for token reuse, remove refresh token from database if reuse noticed
         //user will have to relogin after access token expires
         const tokenUsedCheck = await Token.findOne({'previous':refreshToken})
         if(tokenUsedCheck){
             await Token.findOneAndRemove({'token':refreshToken})
-            const err = new Error('unauthenticated error')
-            err.statusCode = 401
-            throw err
+            res.status(401).json({message:"Not authenticated"})
         }
         //issue new refresh/access pair
          const token = JWT.sign({
@@ -154,7 +152,9 @@ exports.refreshToken = async (req,res,next)=>{
             token:newRefreshToken
         })
         await newToken.save()
-        res.status(201).json({message:"Token refreshed successfully",token:token,refreshToken:newRefreshToken,userId: user._id.toString()})
+        res.status(201).json({message:"Token refreshed successfully",token:token,refreshToken:newRefreshToken,
+            // userId: user._id.toString()
+        })
     }catch(err){
         next(err)
     }

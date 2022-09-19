@@ -27,23 +27,26 @@ const userSchema = new Schema({
     },
     settings:{
     },
-    subscrMe:[
+    //todo : make distinct entity for that
+    subscribers:[
         {
-            tag:{type:String},
+            id:{
+                type:Schema.type.ObjectId
+            },
+            //acess to profile granted to sub : 0 - blocked, 1 - default, 2 - full, 9 - partial ( uses parameters )
             access:{
                 type:Number,
-                default:1
+                default:1,
+                params:{
+
+                }
             }
         }
     ],
-    subscrI:[
+    sbscriptions:[
         {
-            tag:{
-                type:String
-            },
-            type:{
-                type:String,
-                default:'default'
+            id:{
+                type:Schema.type.ObjectId
             },
             notify:{
                 type:Boolean,
@@ -61,6 +64,7 @@ userSchema.virtual('posts',{
     localField:'tag',
     foreignField:'creator'
 })
+
 
 
 module.exports =  mongoose.model('User',userSchema)
