@@ -1,5 +1,7 @@
-const User = require('../models').User
 const files = require('../util').files
+
+const { UserDto, UserProfileDto } = require('../dto').UserDto
+const UserService = require('../services').userService
 
 exports.getUserPage = async (req,res,next)=>{
     try{
@@ -7,40 +9,38 @@ exports.getUserPage = async (req,res,next)=>{
         const userToGet = req.params.user
         //
         let urPage = false
-        const user = await User.findOne({tag:userToGet}).populate('posts')
-        if(!user){
-            return res.status(404).json({message:"No such user"})
+        const user = await UserService.getUser({tag:userToGet},
+            {including:'posts'})
+        if(user.error){
+            return res.status(404).json({message:user.error})
         }
         if (req.userId == user._id){
             urPage = true
         }
         //response formulation
-        reponseObj = {
-            tag:user.tag,
-            name:user.name,
-            profile:user.profile,
-            posts:user.posts
-        }
-        res.status(200).json({message:"user profile loaded successfully",urPage,reponseObj})
-
+        const responseObj = new UserProfileDto(user)
+        res.status(200).json({
+            message:"User profile loaded successfully",
+            urPage,
+            result:responseObj
+        })
     }catch(err){
         next(err)
     }
 }
 
-exports.getUSerProfile = async (req,res,next)=>{
+exports.getUserProfile = async (req,res,next)=>{
     try{
         //get info from request
-        const userId = req.userId
+        const userData = { id: req.userId }
         //
-        const user = await User.findOne({userId:userId}).populate('posts')
-        const reponseObj = {
-            tag:user.tag,
-            name:user.name,
-            profile:user.profile,
-        }
-        res.status(200).json({message:"user profile loaded successfully",urPage,reponseObj})
-
+        const user = await UserService.getUser(userData)
+        //
+        const responseObj = new UserProfileDto(user)
+        res.status(200).json({
+            message:"User profile loaded successfully",
+            result:responseObj
+        })
     }catch(err){
         next(err)
     }
@@ -49,20 +49,15 @@ exports.getUSerProfile = async (req,res,next)=>{
 exports.getUserSettings = async (req,res,next) => {
     try{
         //get info from request
-        const userId = req.userId
+        const userData = { id: req.userId}
         //
-        const user = await User.findById(userId)
-        if(!user){
-            return res.status(404).json({message:"No such user"})
+        const user = await UserService.getUser(userData)
+        if(user.error){
+            return res.status(404).json({message:user.error})
         }
         //
-        const reponseObj = {
-            tag:user.tag,
-            name:user.name,
-            profile:user.profile,
-        }
-        res.status(200).json({message:'',result:reponseObj})
-
+        const responseObj = new UserProfileDto(user)
+        res.status(200).json({message:'Settings access',result:responseObj})
     }catch(err){
         next(err)
     }
@@ -71,25 +66,19 @@ exports.getUserSettings = async (req,res,next) => {
 exports.editUserProfile = async (req,res,next)=>{
     try{
         //get info from request
-        const userId = req.userId
-        const newStatus = req.body.status
-        const pfImgPath = req.file.path
+        const profileFromReq = new UserProfileDto(req.body)
+        const data = {
+            id: req.userId,
+            data:{
+                ...profileFromReq,
+                pf_img:req.files
+            },
+        }
         //
-        const user = await User.findById(userId)
-        if(user.profile.pf_img !== pfImgPath && user.profile.pf_img){
-            if (files.removeImage(user.profile.pf_img)) throw new Error('Unlink error')
-        }
-        user.profile.pf_img = pfImgPath
-        user.profile.status = newStatus
-        user.save()
+        const updated = await UserService.editProfile(data)
         //response formulation
-        const reponseObj = {
-            tag:user.tag,
-            name:user.name,
-            profile:user.profile,
-        }
-        res.status(200).json({message:'',reponseObj})
-
+        const responseObj = new UserProfileDto(updated)
+        res.status(200).json({message:'',responseObj})
     }catch(err){
         next(err)
     }
@@ -98,12 +87,12 @@ exports.editUserProfile = async (req,res,next)=>{
 exports.editUserSettings = async (req,res,next) => {
     try{
         //get info from request
-        const userId = req.userId
-        const newSettings = req.body.settings
+        const data = {
+            id:req.userId,
+            settings:req.body.settings
+        }
         //
-        const user = await User.findById(userId)
-        user.settings = newSettings
-        user.save()
+        await UserService.editSettings(data)
         //
         res.status(200).json({message:'Settings updated'})
     }catch(err){

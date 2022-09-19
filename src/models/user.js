@@ -11,10 +11,6 @@ const userSchema = new Schema({
         type:String,
         required:true,
     },
-    name:{
-        type:String,
-        required:true
-    },
     password:{
         type:String,
         required:true
@@ -24,6 +20,10 @@ const userSchema = new Schema({
             type:String,
         },
         status:String,
+        name:{
+            type:String,
+            required:true
+        },
     },
     settings:{
     },
