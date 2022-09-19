@@ -3,14 +3,9 @@ class UserDto {
     tag
     email
     constructor(data){
-        Object.keys(data).forEach(attr => {
-            if (this.hasOwnProperty(attr)) {
-                this.attr = data.attr
-            }
-        })
-    }
-    toJSON(){
-
+        this.id = data.id || data._id
+        this.tag = data.tag
+        this.email = data.email
     }
 }
 
@@ -21,9 +16,6 @@ class UserProfileDto extends UserDto{
         super(data);
         this.posts = data.posts
         this.profile = data.profile || { ...data }
-    }
-    toJSON(){
-
     }
 }
 module.exports = {

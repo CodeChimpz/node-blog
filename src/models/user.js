@@ -31,7 +31,7 @@ const userSchema = new Schema({
     subscribers:[
         {
             id:{
-                type:Schema.type.ObjectId
+                type:Schema.Types.ObjectId
             },
             //acess to profile granted to sub : 0 - blocked, 1 - default, 2 - full, 9 - partial ( uses parameters )
             access:{
@@ -46,7 +46,7 @@ const userSchema = new Schema({
     sbscriptions:[
         {
             id:{
-                type:Schema.type.ObjectId
+                type:Schema.Types.ObjectId
             },
             notify:{
                 type:Boolean,

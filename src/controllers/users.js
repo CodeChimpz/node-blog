@@ -1,7 +1,8 @@
 const files = require('../util').files
 
 const { UserDto, UserProfileDto } = require('../dto').UserDto
-const UserService = require('../services').userService
+const services = require('../services')
+const UserService = new services.userService()
 
 exports.getUserPage = async (req,res,next)=>{
     try{
@@ -18,11 +19,10 @@ exports.getUserPage = async (req,res,next)=>{
             urPage = true
         }
         //response formulation
-        const responseObj = new UserProfileDto(user)
         res.status(200).json({
             message:"User profile loaded successfully",
+            result:new UserProfileDto(user),
             urPage,
-            result:responseObj
         })
     }catch(err){
         next(err)
@@ -36,10 +36,9 @@ exports.getUserProfile = async (req,res,next)=>{
         //
         const user = await UserService.getUser(userData)
         //
-        const responseObj = new UserProfileDto(user)
         res.status(200).json({
             message:"User profile loaded successfully",
-            result:responseObj
+            result:new UserProfileDto(user)
         })
     }catch(err){
         next(err)
@@ -49,15 +48,17 @@ exports.getUserProfile = async (req,res,next)=>{
 exports.getUserSettings = async (req,res,next) => {
     try{
         //get info from request
-        const userData = { id: req.userId}
+        const userData = { id: req.userId }
         //
         const user = await UserService.getUser(userData)
         if(user.error){
             return res.status(404).json({message:user.error})
         }
         //
-        const responseObj = new UserProfileDto(user)
-        res.status(200).json({message:'Settings access',result:responseObj})
+        res.status(200).json({
+            message:"Settings access",
+            result:new UserProfileDto(user)
+        })
     }catch(err){
         next(err)
     }
@@ -70,15 +71,17 @@ exports.editUserProfile = async (req,res,next)=>{
         const data = {
             id: req.userId,
             data:{
-                ...profileFromReq,
+                ...profileFromReq.profile,
                 pf_img:req.files
             },
         }
         //
         const updated = await UserService.editProfile(data)
         //response formulation
-        const responseObj = new UserProfileDto(updated)
-        res.status(200).json({message:'',responseObj})
+        res.status(200).json({
+            message:"",
+            result:new UserProfileDto(updated)
+        })
     }catch(err){
         next(err)
     }

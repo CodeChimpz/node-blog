@@ -17,15 +17,17 @@ class UserService {
         const emailCheck = await User.findOne({'email':email})
         const tagCheck = await User.findOne({'tag':tag})
         if( emailCheck || tagCheck ){
-            return { error: emailCheck || tagCheck }
+            return { error: `User with such ${emailCheck?'email':tagCheck?'tag':'_'} already exists` }
         }
         //save user and return
         const hashed = await bcrypt.hash(password,12)
         const newUser = new User({
-            name, tag, email, password:hashed
+            tag, email, password:hashed, profile:{
+                name
+            }
         })
         await newUser.save()
-        return { user:newUser }
+        return newUser
     }
     //
     async login(userObj){
@@ -38,7 +40,7 @@ class UserService {
         if(!checkPass){
             return { error : 'Incorrect password' }
         }
-        return { user }
+        return user
     }
     //
     async terminate(userObj){
@@ -58,13 +60,15 @@ class UserService {
         const value = idObj[parameter]
         let user;
         if (parameter === "id"){
-            user = await User.findById(value).populate(options.including)
+            user = await options ? User.findById(value).populate(options.including) : User.findById(value)
         } else {
-            user = await User.findOne({parameter:value}).populate(options.including)
+            //todo bug: {parameter:value} doesn't work but passing the object does
+            user = await options ? User.findOne(idObj).populate(options.including) : User.findOne(idObj)
         }
         if (!user){
             return { error : "User not found" }
         }
+        return user
     }
     // get all user posts
     async editProfile(dataObj){
@@ -77,6 +81,7 @@ class UserService {
         await user.save()
         return user
     }
+
     async editSettings(dataObj){
         const user = await User.findById(dataObj.id)
         user.settings = dataObj.data

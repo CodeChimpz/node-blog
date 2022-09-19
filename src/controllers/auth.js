@@ -1,7 +1,8 @@
 const { validationResult } = require('express-validator')
 
-const UserService = require('../services').userService
-const TokenService = require('../services').tokenService
+const services = require('../services')
+const UserService = new services.userService()
+const TokenService = new services.tokenService()
 
 //sign in and create account
 exports.signUp = async (req,res,next)=>{

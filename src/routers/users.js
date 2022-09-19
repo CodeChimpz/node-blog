@@ -22,18 +22,18 @@ userRouter.route('/profile')
 userRouter.route('/settings')
     .get(isAuth,userContr.getUserSettings)
     .post(isAuth,userContr.editUserSettings)
-
-//Subscription Handling
-userRouter.route('/:user/followers')
-    .post(isAuth,userContr.postToUserSubscr)
-    .delete(isAuth,userContr.delToUserSubscr)
-
-userRouter.route('/:user/followers')
-    .get(isAuth,userContr.getMyUserSubscr)
-    .put(isAuth,userContr.editMyUserSubscr)
-
-userRouter.route('/follows/:user')
-    .get(isAuth,userContr.getIUserSubscr)
+//
+// //Subscription Handling
+// userRouter.route('/:user/followers')
+//     .post(isAuth,userContr.postToUserSubscr)
+//     .delete(isAuth,userContr.delToUserSubscr)
+//
+// userRouter.route('/:user/followers')
+//     .get(isAuth,userContr.getMyUserSubscr)
+//     .put(isAuth,userContr.editMyUserSubscr)
+//
+// userRouter.route('/follows/:user')
+//     .get(isAuth,userContr.getIUserSubscr)
 
 
 //User profile handling
