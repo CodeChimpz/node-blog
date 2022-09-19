@@ -2,254 +2,144 @@
 const Post = require('../models').Post
 const User = require('../models').User
 
-const fs = require('fs')
-const path = require('path')
-//get a set of posts for /user/posts
+const files = require('../util').files
+const tagSearch = require('../util').tagSearch
 
-//test function
-async function getUserPosts(req,res){
+
+exports.getUserPost = async (req,res,next) => {
     try{
-        const user = req.params.user
-        //get id from params
-        const total = await User.find({tag:user}).populate('posts')
-        //pagination
-        const currPage = req.query.page || 1
-        const perPage = 3
-        const totalPosts = await Post.find({creator:getUserId}).countDocuments()
-        //pagination
-        const postsPopulated = await Post.find({creator:getUserId}).populate('creator').skip((currPage-1)*perPage).limit(perPage)
-        res.status(200).json({posts:postsPopulated,totalPosts})
+        //get info from request
+        const postId = req.params.post
+        //
+        const post = await Post.findById(postId).populate('creator',['tag','name','profile'])
+        if(!post){
+            return res.status(404).json({message:"No such post"})
+        }
+        return res.status(200).json({message:post})
+    }catch(err){
+        next(err)
     }
-    catch(err){
-        console.log(err)
-        res.status(err.statusCode || 500).json({message: 'error', error: err})
+}
+
+exports.createUserPost = async (req,res,next) => {
+    try{
+        //get info from request
+        if(!req.files[0]){
+            return res.status(422).json({message:"No image file provided !"})
+        }
+        const {content,tags} = req.body
+        const gallery = req.files.map(img=>{
+            return {img_url:img.path,
+                metadata:{
+                    encoding:img.encoding,
+                    mimetype:img.mimetype,
+                    size:img.size
+                }}
+        })
+        //
+        const creator = await User.findById(req.userId).select('tag')
+        if(!creator){
+            return res.status(403).json({message:"Not authorized to perform this action"})
+        }
+        //
+        const newPost = new Post({
+            gallery,content,tags,creator:creator.tag
+        })
+        await newPost.save()
+        return res.status(201).json({message:"Post uploaded successfully!",post:newPost, userId:creator})
+    }catch(err){
+        next(err)
     }
-
 }
 
-function getUserPost(req,res,next) {
-    const postId = req.params.post
-    Post.findById(postId).populate('creator',['tag','name','profile'])
-        .then(result=>{
-                if(!result){
-                    const error = new Error('No such post')
-                    error.statusCode = 404
-                    throw error
-                }
-                res.status(200).json({message:result})
-            }
-        )
-        .catch(err=>{
-            next(err)
-        })
-}
+exports.editUserPost = async (req,res,next) => {
+    try{
+        //get info from request
+        const postId = req.params.post
+        const { content, tags } = req.body
 
-function createUserPost(req,res,next){
-    if(!req.files){
-        const error = new Error('No image file provided')
-        error.statusCode = 422
-        throw error
-    }
-    const {
-        content,tagsString,mentionedString
-    } = req.body
-    //preparing data for model
-    const gallery = req.files.map(img=>{
-        return {img_url:img.path,
-            metadata:{
-            encoding:img.encoding,
-            mimetype:img.mimetype,
-            size:img.size
-            }}
-    })
-    const tags = tagsString.split('#')
-    //reference handling
-    const creator = req.userId
-    const newPost = new Post({
-        gallery,content,tags,creator
-    })
-    newPost.save()
-        .then((result)=>{
-            return User.findById(req.userId).populate('posts')
-        })
-        .then(user=>{
-            user.posts.push(newPost)
-            return user.save()})
-        .then(()=>{
-            res.status(201).json({message:"Post uploaded successfully!",post:newPost, userId:creator})
-        })
-        .catch(err=>{
-            next(err)
-        })
-}
+        const post = await Post.findById(postId)
+        if(!post){
+            return res.status(404).json({message:"No such post"})
+        }
+        const checkCreator = await User.findById(req.userId).select('tag')
+        if(checkCreator.tag !== post.creator || !checkCreator){
+            return res.status(403).json({message:"Not authorized to perform this action"})
+        }
 
-function editUserPost(req,res,next){
-    //validate user
-    const postId = req.params.post
-    const { content, tagsString } = req.body
-    Post.findById(postId)
-        .then(post=>{
-            if(!post){
-                const error = new Error('No such post')
-                error.statusCode = 404
-                throw error
-            }
-            if(req.userId != post.creator){
-                const error = new Error('Not authorized to delete')
-                error.statusCode = 403
-                throw error
-            }
-            if (req.files){
-                const newGallery = req.files.map(img=>{
-                    return {
-                        img_url:img.path,
-                        metadata:{
-                            encoding:img.encoding,
-                            mimetype:img.mimetype,
-                            size:img.size
-                        }}
-                })
-                //delete old images that are not resent in updated gallery
-                const urlArray = req.files.map(file=> {
-                    return file.path
-                })
-                post.gallery.forEach(img=>{
-                    if (!urlArray.includes(img.img_url)){
-                            removeImage(img)
-                        }
-                    }
-                )
-                post.gallery = newGallery
-            }
-            //preparing data
-            if (content) post.content = content
-            if (tagsString) post.tags = tagsString.split('#')
-            return post.save()
-    })
-        .then(result=>{
-            res.status(201).json({message:result})
-    })
-        .catch(
-            err=>{
-                next(err)
-            }
-        )
-
-}
-function deleteUserPost(req,res,next){
-    const postId = req.params.post
-    Post.findById(postId)
-        .then(post=>{
-            if(!post){
-                const error = new Error('No such post')
-                error.statusCode = 404
-                throw error
-            }
-            if(post.creator !== req.userId){
-                const error = new Error('Not authorized to delete')
-                error.statusCode = 403
-                throw error
-            }
-            post.gallery.forEach(img=>{
-                removeImage(img)
+        if (content) post.content = content
+        if (tags) post.tags = tags
+        if (req.files){
+            //
+            const newGallery = req.files.map(img=>{
+                return {
+                    img_url:img.path,
+                    metadata:{
+                        encoding:img.encoding,
+                        mimetype:img.mimetype,
+                        size:img.size
+                    }}
             })
-            return Post.findByIdAndRemove(postId)
-        })
-        .then(result=>{
-            return User.findById(req.userId)
-        })
-        .then(user=>{
-            user.posts.pull(postId)
-            return user.save()
-        })
-        .then(result=>{
-            res.status(200).json({message:'Post deleted successfully'})}
-        )
-        .catch(err=>{
-            next(err)
-        })
+            //
+            //delete old images that are not resent in updated gallery
+            const urlArray = req.files.map(file=> {
+                return file.path
+            })
+            post.gallery.forEach(img=>{
+                    if (!urlArray.includes(img.img_url)){
+                        if (files.removeImage(img)) throw new Error('Unlink error')
+                    }}
+                    )
+            //
+            post.gallery = newGallery
+        }
+
+        await post.save()
+        return res.status(201).json({message:post})
+    }catch(err){
+        next(err)
+    }
+
 }
 
-//endpoint controllers for ->posts
+exports.deleteUserPost = async (req,res,next) => {
+    try{
+        const postId = req.params.post
+        const post= await Post.findById(postId)
+
+        if(!post){
+            return res.status(404).json({message:"No such post"})
+        }
+        const checkCreator = await User.findById(req.userId).select('tag')
+        if(checkCreator.tag !== post.creator || !checkCreator){
+            return res.status(403).json({message:"Not authorized to perform this action"})
+        }
+        post.gallery.forEach(img=>{
+            files.removeImage(img)
+        })
+
+        await post.remove()
+        return res.status(200).json({message:'Post deleted successfully'})
+    }catch(err){
+        next(err)
+    }
+}
+
+//endpoints for ->posts
 //get a set of posts for /posts '{tags:...}'
-async function getPostsByTags(req,res,next){
+exports.getPostsByTags = async (req,res,next) => {
     if(!req.query.tags){
         return res.status(204).json({message:'no tags provided'})
     }
-    tags = req.query.tags.split('#')
+    const tags = req.query.tags
     try{
-        const generated = await getWeightByTags(tags,Post)
+        const generated = await tagSearch.getWeightByTags(tags,Post)
         if(!generated.length){
-            const error = new Error('No posts found with the tags!')
-            error.statusCode = 404
-            throw error
+            return res.status(404).json({message:'No posts found with the tags!'})
         }
         res.status(200).json({message:'success',posts:generated})
     }
     catch(err){
         next(err)
     }
-}
-
-async function getFeed(req,res,next){
-
-}
-
-function getExp(req,res){}
-
-//feedback for algorythms
-// function postFeed(req,res){}
-//
-// function postExp(req,res){}
-//
-// function putExp(req,res){}
-
-
-//Helper functions
-async function getWeightByTags(tagsArr,modelGoose){
-    try{
-        const genArray = await modelGoose.find(
-            {tags:{$in:tagsArr}}
-        ).lean()
-        return genArray.map((elem)=>{
-            //array intersection power
-            let tagNum = 0
-            tagsArr.forEach(tag=>{
-                if(elem.tags.includes(tag)){
-                    tagNum++
-                }
-            })
-            //todo idk about float accuracy here and idc
-            const relevanceCoeff = tagNum/elem.tags.length
-            //
-            const weightInit = tagNum/tagsArr.length
-            elem._weight = weightInit * relevanceCoeff
-            return elem
-        })
-    }
-    catch(err){
-        console.log(err)
-        throw new Error(err.message)
-    }
-}
-
-function removeImage(img){
-    fs.unlink(path.join(__dirname,'..',img.img_url),err=>{
-        if(err){
-            const error = new Error
-            error.message = err
-            throw error
-        }
-    })
-}
-
-module.exports = {
-    getUserPost,
-    editUserPost,
-    deleteUserPost,
-    createUserPost,
-    getPostsByTags,
-    getFeed,
-    getExp
-
 }

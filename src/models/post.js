@@ -22,17 +22,9 @@ const postSchema = new Schema({
             {type:String}
         ],
         creator:{
-            type: Schema.Types.ObjectId,
+            type: String,
             ref:'User'
         },
-        // mentioned:[
-        //     {
-        //         user:{
-        //             type:Object,
-        //             required:true,
-        //         }
-        //     }
-        // ]
 },{
     timestamps:true
 })
