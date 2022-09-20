@@ -5,7 +5,7 @@ const Schema = mongoose.Schema
 const postSchema = new Schema({
         gallery:[
             {
-                img_url:{
+                path:{
                     type:String,
                     required:true
                 },
@@ -22,11 +22,17 @@ const postSchema = new Schema({
             {type:String}
         ],
         creator:{
-            type: String,
+            type:Schema.Types.ObjectId,
             ref:'User'
         },
 },{
     timestamps:true
 })
+
+// postSchema.virtual('author',{
+//     ref:'User',
+//     localField:'creator',
+//     foreignField:'tag'
+// })
 
 module.exports = mongoose.model('Post',postSchema)

@@ -31,7 +31,7 @@ class UserService {
     }
     //
     async login(userObj){
-        const { name, tag, email, password } = userObj
+        const { email, password } = userObj
         const user = await User.findOne({'email':email})
         if(!user){
             return { error : 'User not found' }
@@ -45,28 +45,34 @@ class UserService {
     //
     async terminate(userObj){
         const user = await User.findById(userObj.id)
-        if(!await bcrypt.compare(userObj.password,user.password)){
+        const compare = await bcrypt.compare(userObj.password,user.password)
+        if(!compare){
             return { error: "Invalid password" }
         }
         await User.findByIdAndRemove(userObj.id)
+        return {}
     }
     // user profile actions
     //
     //get detailed user info ( as is in DB)
     //parameter:value - to search in db
     //options - include additional info about user
-    async getUser(idObj,options){
+    async getUser(idObj,options,select){
         const parameter = Object.keys(idObj)[0]
         const value = idObj[parameter]
-        let user;
+        let query;
         if (parameter === "id"){
-            user = await options ? User.findById(value).populate(options.including) : User.findById(value)
+            query =  options ? User.findById(value).populate(options.including) : User.findById(value)
         } else {
             //todo bug: {parameter:value} doesn't work but passing the object does
-            user = await options ? User.findOne(idObj).populate(options.including) : User.findOne(idObj)
+            query =  options ? User.findOne(idObj).populate(options.including) : User.findOne(idObj)
         }
+        const user = await query.exec()
         if (!user){
             return { error : "User not found" }
+        }
+        if(select){
+            return user.select(select.join(' '))
         }
         return user
     }

@@ -3,7 +3,7 @@ const { validationResult } = require('express-validator')
 const services = require('../services')
 const UserService = new services.userService()
 const TokenService = new services.tokenService()
-
+const PostService = new services.postService()
 //sign in and create account
 exports.signUp = async (req,res,next)=>{
     try{
@@ -29,13 +29,14 @@ exports.signUp = async (req,res,next)=>{
 //delete user account
 exports.signOut = async (req,res,next)=>{
     try{
-        //todo: make a DTO that would do this stuff
         const userData = {
             id:req.userId,
             password:req.body.password
         }
         //
-        const terminated =await UserService.terminate(userData)
+        await PostService.deleteUserPosts(userData.id)
+        const terminated = await UserService.terminate(userData)
+        console.log(terminated)
         if(terminated.error){
             return res.status(401).json({message:terminated.error})
         }
@@ -59,7 +60,7 @@ exports.logIn = async (req,res,next)=>{
         if(authenticated.error){
             return res.status(401).json({message:authenticated.error})
         }
-        const user = authenticated.user
+        const user = authenticated
         //create jwt
         const token = TokenService.signAccessToken(user)
         //create refresh jwt

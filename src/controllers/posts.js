@@ -1,21 +1,18 @@
 //endpoint controllers for /user/:post
-const Post = require('../models').Post
-const User = require('../models').User
-
-const files = require('../util').files
-const tagSearch = require('../util').tagSearch
-
+const services = require('../services')
+const UserService = new services.userService()
+const PostService = new services.postService()
 
 exports.getUserPost = async (req,res,next) => {
     try{
         //get info from request
         const postId = req.params.post
         //
-        const post = await Post.findById(postId).populate('creator',['tag','name','profile'])
-        if(!post){
-            return res.status(404).json({message:"No such post"})
+        const post = await PostService.getPost(postId,{include:'creator',fields:['tag','name']})
+        if(post.error){
+            return res.status(404).json({message:post.error})
         }
-        return res.status(200).json({message:post})
+        return res.status(200).json({result:post})
     }catch(err){
         next(err)
     }
@@ -27,26 +24,23 @@ exports.createUserPost = async (req,res,next) => {
         if(!req.files[0]){
             return res.status(422).json({message:"No image file provided !"})
         }
-        const {content,tags} = req.body
-        const gallery = req.files.map(img=>{
-            return {img_url:img.path,
-                metadata:{
-                    encoding:img.encoding,
-                    mimetype:img.mimetype,
-                    size:img.size
-                }}
-        })
+        const dataObj = {
+            content: req.body.content,
+            tags: req.body.tags,
+            gallery : PostService.formGallery(req.files),
+            creator: req.userId
+        }
+        console.log(dataObj)
         //
-        const creator = await User.findById(req.userId).select('tag')
-        if(!creator){
+        if(dataObj.creator.error){
             return res.status(403).json({message:"Not authorized to perform this action"})
         }
+        const created = await PostService.createPost(dataObj)
         //
-        const newPost = new Post({
-            gallery,content,tags,creator:creator.tag
+        return res.status(201).json({
+            message:"Post uploaded successfully!",
+            result:created
         })
-        await newPost.save()
-        return res.status(201).json({message:"Post uploaded successfully!",post:newPost, userId:creator})
     }catch(err){
         next(err)
     }
@@ -55,47 +49,21 @@ exports.createUserPost = async (req,res,next) => {
 exports.editUserPost = async (req,res,next) => {
     try{
         //get info from request
-        const postId = req.params.post
-        const { content, tags } = req.body
-
-        const post = await Post.findById(postId)
-        if(!post){
-            return res.status(404).json({message:"No such post"})
+        const dataObj = {
+            id:req.params.post,
+            content: req.body.content,
+            tags: req.body.tags,
+            gallery : req.files.length ? PostService.formGallery(req.files) : null,
         }
-        const checkCreator = await User.findById(req.userId).select('tag')
-        if(checkCreator.tag !== post.creator || !checkCreator){
-            return res.status(403).json({message:"Not authorized to perform this action"})
+        const check = await PostService.checkOwnership({
+            userId:req.userId,
+            postId:dataObj.id
+        })
+        if(check.error){
+            return res.status(check.status).json({message:check.error})
         }
-
-        if (content) post.content = content
-        if (tags) post.tags = tags
-        if (req.files){
-            //
-            const newGallery = req.files.map(img=>{
-                return {
-                    img_url:img.path,
-                    metadata:{
-                        encoding:img.encoding,
-                        mimetype:img.mimetype,
-                        size:img.size
-                    }}
-            })
-            //
-            //delete old images that are not resent in updated gallery
-            const urlArray = req.files.map(file=> {
-                return file.path
-            })
-            post.gallery.forEach(img=>{
-                    if (!urlArray.includes(img.img_url)){
-                        if (files.removeImage(img)) throw new Error('Unlink error')
-                    }}
-                    )
-            //
-            post.gallery = newGallery
-        }
-
-        await post.save()
-        return res.status(201).json({message:post})
+        const updated = await PostService.editPost(dataObj,check)
+        return res.status(201).json({message:updated})
     }catch(err){
         next(err)
     }
@@ -104,21 +72,14 @@ exports.editUserPost = async (req,res,next) => {
 
 exports.deleteUserPost = async (req,res,next) => {
     try{
-        const postId = req.params.post
-        const post= await Post.findById(postId)
-
-        if(!post){
-            return res.status(404).json({message:"No such post"})
-        }
-        const checkCreator = await User.findById(req.userId).select('tag')
-        if(checkCreator.tag !== post.creator || !checkCreator){
-            return res.status(403).json({message:"Not authorized to perform this action"})
-        }
-        post.gallery.forEach(img=>{
-            files.removeImage(img)
+        const check = await PostService.checkOwnership({
+            userId:req.userId,
+            postId:req.params.post
         })
-
-        await post.remove()
+        if(check.error){
+            return res.status(check.status).json({message:check.error})
+        }
+        await PostService.deletePost(null,check)
         return res.status(200).json({message:'Post deleted successfully'})
     }catch(err){
         next(err)
@@ -128,14 +89,16 @@ exports.deleteUserPost = async (req,res,next) => {
 //endpoints for ->posts
 //get a set of posts for /posts '{tags:...}'
 exports.getPostsByTags = async (req,res,next) => {
-    if(!req.query.tags){
-        return res.status(204).json({message:'no tags provided'})
-    }
-    const tags = req.query.tags
     try{
-        const generated = await tagSearch.getWeightByTags(tags,Post)
-        if(!generated.length){
-            return res.status(404).json({message:'No posts found with the tags!'})
+        if(!req.query.tags){
+            return res.status(204).json({message:'no tags provided'})
+        }
+        const tags = req.query.tags
+        const page = req.query.page
+        const sort = req.body.sortBy
+        const generated = await PostService.getByTags(tags,page,sort)
+        if(generated.error){
+            return res.status(404).json({message:generated.error})
         }
         res.status(200).json({message:'success',posts:generated})
     }

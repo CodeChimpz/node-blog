@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 
 const User = require('../models/user')
-const config = require('../config.json')
+const config = require('../config.json').jwt
 
 module.exports = function isAuth (req,res,next) {
     const header = req.get('Authorization')
