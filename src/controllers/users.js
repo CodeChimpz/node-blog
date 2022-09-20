@@ -67,11 +67,11 @@ exports.getUserSettings = async (req,res,next) => {
 exports.editUserProfile = async (req,res,next)=>{
     try{
         //get info from request
-        const profileFromReq = new UserProfileDto(req.body)
         const data = {
             id: req.userId,
             data:{
-                ...profileFromReq.profile,
+                ... JSON.parse(req.body.profile) || JSON.parse(req.body.user.profile),
+                //todo: really bad really bad fix
                 pf_img:req.files
             },
         }
@@ -92,7 +92,7 @@ exports.editUserSettings = async (req,res,next) => {
         //get info from request
         const data = {
             id:req.userId,
-            settings:req.body.settings
+            settings: req.body.settings || req.body.user.service
         }
         //
         await UserService.editSettings(data)

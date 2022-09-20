@@ -1,6 +1,6 @@
 const JWT = require('jsonwebtoken')
 
-const config = require('../config.json')
+const config = require('../config.json').jwt
 
 const Token = require('../models').Token
 const User = require('../models').User
