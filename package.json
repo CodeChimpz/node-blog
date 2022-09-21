@@ -24,11 +24,11 @@
   "name": "node-blogging-app",
   "version": "0.0.1",
   "description": "test node api for blogging app",
-  "main": "src/server.js",
+  "main": "server.js",
   "scripts": {
     "test": "mocha",
-    "dev": "nodemon src/server.js",
-    "debug": "nodemon --inspect src/server.js"
+    "dev": "nodemon server.js",
+    "debug": "nodemon --inspect server.js"
   },
   "repository": {
     "type": "git",

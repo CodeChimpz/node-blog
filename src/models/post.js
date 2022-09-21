@@ -21,6 +21,20 @@ const postSchema = new Schema({
         tags:[
             {type:String}
         ],
+        hidden:[
+            {
+                mentions:[
+                    { id:{type:Schema.Types.ObjectId,ref:'User'},tag:{type:String}}
+                ],
+                forbidden:{
+                    tags:[
+                        { tag:{type:String} }
+                    ],
+                    users:[
+                        { id:{type:Schema.Types.ObjectId,ref:'User'}}
+                ]}
+            }
+        ],
         creator:{
             type:Schema.Types.ObjectId,
             ref:'User'
@@ -29,10 +43,5 @@ const postSchema = new Schema({
     timestamps:true
 })
 
-// postSchema.virtual('author',{
-//     ref:'User',
-//     localField:'creator',
-//     foreignField:'tag'
-// })
 
 module.exports = mongoose.model('Post',postSchema)

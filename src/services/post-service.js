@@ -49,8 +49,8 @@ class PostService{
                     if (files.removeImage(img)) throw new Error('Unlink error')
                 }}
             )
-            post.gallery = dataObj.gallery
         }
+        post.hidden = dataObj.hidden || post.hidden
         post.content = dataObj.content || post.content
         post.tags = dataObj.tags || post.tags
         await post.save()
