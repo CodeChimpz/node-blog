@@ -25,43 +25,73 @@ const userSchema = new Schema({
             required: true
         },
     },
-    settings: {},
-//     subscribers:[
-//         {
-//             id:{
-//                 type:Schema.Types.ObjectId
-//             },
-//             //acess to profile granted to sub : 0 - blocked, 1 - default, 2 - full, 9 - partial ( uses parameters )
-//             access:{
-//                 type:Number,
-//                 default:1,
-//                 params:{
-//
-//                 }
-//             }
-//         }
-//     ],
-//     sbscriptions:[
-//         {
-//             id:{
-//                 type:Schema.Types.ObjectId
-//             },
-//             notify:{
-//                 type:Boolean,
-//                 default:0
-//             }
-//         }
-//     ]
-//
-// },{
-//     timestamps:true
-// })
+    settings: {
+        publicSettings:{
+            //0-no,1-default(all),2-friends
+            allowMention:{type:Number,default:1},
+            allowSend:{type:Number,default:1},
+            seeSubscribers:{type:Boolean,default:false},
+            seeSubscriptions:{type:Boolean,default:false},
+        },
+        privateSettings:{
+          notifyOnSub:{type:Boolean,default:true}
+        }
+    },
+    //user interaction lgc
+    subscriptions:[
+        {
+            id:{
+                type:Schema.Types.ObjectId,
+                ref:'User',
+                required: true
+            },
+            notify:{
+                type:String,
+            },
+        }
+        ],
+    access:[{
+        id:{
+            type:Schema.Types.ObjectId,
+            ref:'User',
+            required: true
+        },
+        value:{
+            type:Number,
+            default:1,
+        },
+        details:{
+            allowView:{
+                type:Boolean,
+                default:true
+            },
+            allowSend:{
+                type:Boolean,
+                default:true
+            },
+            //post with hidden tag won't be seen by user
+            forbidTags:[
+                {
+                    tag:{type:String}
+                }
+            ]
+        }
+    }]
+},{
+    timestamps:true
 })
+
 
 userSchema.virtual('posts',{
     ref:'Post',
     localField:'_id',
     foreignField:'creator'
+})
+
+userSchema.virtual('subscribers',{
+    ref:'User',
+    localField:'_id',
+    foreignField:'subscriptions.id'
 })
 
 

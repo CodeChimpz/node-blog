@@ -67,12 +67,12 @@ class UserService {
             //todo bug: {parameter:value} doesn't work but passing the object does
             query =  options ? User.findOne(idObj).populate(options.including) : User.findOne(idObj)
         }
+        if(select){
+            query = query.select(select.join(' '))
+        }
         const user = await query.exec()
         if (!user){
             return { error : "User not found" }
-        }
-        if(select){
-            return user.select(select.join(' '))
         }
         return user
     }
@@ -91,9 +91,39 @@ class UserService {
     async editSettings(dataObj){
         const user = await User.findById(dataObj.id)
         user.settings = dataObj.data
-        user.save()
+        console.log(dataObj.data)
+        await user.save()
+
     }
     //subscription stuff
+    //Sub to user, returns the user to whom you subbed
+    async subscribe(dataObj){
+        const {to,by,notify} = dataObj
+        const dom =  await User.findOne({tag:to})
+        const sub = await User.findById(by).select('subscriptions.id')
+        if(!dom){
+            return { status:404, error: 'Invalid user to subscribe to'}
+        }
+        if(!sub){
+            return { status:401, error:"You do not exist"}
+        }
+        const checkSub = sub.subscriptions.filter(s=>{if(s.id.toString() == dom._id.toString()){return true}})
+        if (checkSub.length) {
+            return { status:300, error: 'Already following to this user'}
+        }
+        sub.subscriptions.push({
+            id:dom._id,
+            notify
+        })
+        await sub.save()
+        return dom
+    }
+    async unsubscribe(){
+
+    }
+    async editSub(){
+
+    }
 }
 
 module.exports = UserService

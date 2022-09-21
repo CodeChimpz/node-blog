@@ -21,8 +21,7 @@ module.exports = function isAuth (req,res,next) {
         }
         req.userId = decodedToken.userId
     }catch(err){
-        err.statusCode = 500
-        throw err;
+        next(err);
     }
     next()
 }

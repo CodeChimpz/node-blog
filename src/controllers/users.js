@@ -1,6 +1,6 @@
 const files = require('../util').files
 
-const { UserDto, UserProfileDto } = require('../dto').UserDto
+const { UserDto, UserProfileDto, UserPeopleDto } = require('../dto').UserDto
 const services = require('../services')
 const UserService = new services.userService()
 
@@ -57,7 +57,7 @@ exports.getUserSettings = async (req,res,next) => {
         //
         res.status(200).json({
             message:"Settings access",
-            result:new UserProfileDto(user)
+            result:new UserDto(user)
         })
     }catch(err){
         next(err)
@@ -92,7 +92,7 @@ exports.editUserSettings = async (req,res,next) => {
         //get info from request
         const data = {
             id:req.userId,
-            settings: req.body.settings || req.body.user.service
+            data: req.body.settings
         }
         //
         await UserService.editSettings(data)
@@ -102,50 +102,70 @@ exports.editUserSettings = async (req,res,next) => {
         next(err)
     }
 }
+//Subscription functionality
+//view subscriptions
+exports.getSubscriptions = async(req,res,next)=>{
+    try{
+        //get info from request
+        const find = req.params.user
+        let urPage = false
+        //
+        const user = await UserService.getUser({'tag':find},{including:'subscribers'},['subscriptions'])
+        if(user.error){
+            return res.status(404).json({message:user.error})
+        }
+        if (user._id == req.userId){
+            urPage = true
+            return res.status(200).json({result:user,urPage})
+        }
+        res.status(200).json({result:new UserPeopleDto()})
+    }catch(err){
+        next(err)
+    }
 
-//subscribe to a user
+}
+//subscribe to user
 exports.postSubscription = async (req,res,next)=>{
     try{
         //get info from request
-        const userToName = req.params.user
-        const userById = req.userId
-        const subscrType = req.body.subscrType
-        const notify = req.body.notification
+        const subscription = {
+            to:req.body.sub.to || req.params.user,
+            by:req.userId,
+            notify:req.body.sub.notify
+        }
         //check user existance and authentiaction
-        const userTo =  await User.findOne({tag:userToName})
-        const userBy = await User.findById(userById)
-        if(!userBy || !userTo){
-            const reason = `${!userBy ? 'Not authenticated!' : `Invalid subject to subscribe to - ${userToName}!`}`
-            return res.status(404).json({message:reason})
+        const subbed = await UserService.subscribe(subscription)
+        if (subbed.error){
+            return res.status(subbed.status).json({message:subbed.error})
         }
-        if (userTo.subscrMe.find(sub=>{
-            if(userBy.tag === sub.tag) return true
-        })){
-            res.status(300).json({message:'Already subscribed to that user'})
-        }
-        userTo.subscrMe.push({
-            tag:userBy.tag
-        })
-        userBy.subscrI.push({
-            tag:userTo.tag,
-            type:subscrType,
-            notify,
-        })
-        await userTo.save()
-        await userBy.save()
         res.status(200).json({
-            message:'Subscribed to '+ userToName,
-            result:userBy.subscrI
+            message:'Subscribed to '+ subbed.tag,
+            result:new UserProfileDto(subbed)
         })
     }
     catch(err){
         next(err)
     }
 }
-
-exports.editToUserSubscr = async (req,res,next)=>{
+//edit subscription settings
+exports.editSubscription = async (req,res,next)=>{
+    //get info from request
+    const subscription = {
+        from:req.body.sub.to || req.params.user,
+        by:req.userId,
+        notify:req.body.sub.notify,
+    }
 
 }
+exports.deleteSubscription = async (req,res,next) =>{
+
+}
+//view subscribers
+exports.getSubscribers = async(req,res,next)=>{
+
+}
+
+
 
 exports.delToUserSubscr = async (req,res,next) => {
     try{
@@ -171,7 +191,6 @@ exports.delToUserSubscr = async (req,res,next) => {
         next(err)
     }
 }
-
 
 exports.getMyUserSubscr = async (req,res,next) => {
         try{

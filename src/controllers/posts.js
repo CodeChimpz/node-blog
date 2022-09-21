@@ -7,7 +7,7 @@ exports.getUserPost = async (req,res,next) => {
     try{
         //get info from request
         const postId = req.params.post
-        //
+        //if id is in post.hidden.forbidden.users or in user.
         const post = await PostService.getPost(postId,{include:'creator',fields:['tag','name']})
         if(post.error){
             return res.status(404).json({message:post.error})
@@ -24,13 +24,14 @@ exports.createUserPost = async (req,res,next) => {
         if(!req.files[0]){
             return res.status(422).json({message:"No image file provided !"})
         }
+        //todo: make a mapper
         const dataObj = {
+            hidden:req.body.hidden,
             content: req.body.content,
             tags: req.body.tags,
             gallery : PostService.formGallery(req.files),
             creator: req.userId
         }
-        console.log(dataObj)
         //
         if(dataObj.creator.error){
             return res.status(403).json({message:"Not authorized to perform this action"})
