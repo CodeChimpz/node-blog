@@ -27,8 +27,13 @@ userRouter.route('/settings')
 userRouter.route('/:user/follows')
     .get(isAuth,userContr.getSubscriptions)
 
+userRouter.route('/:user/followers')
+    .get(isAuth,userContr.getSubscribers)
+
 userRouter.route('/follow/:user')
     .post(isAuth,userContr.postSubscription)
+    .put(isAuth,userContr.editSubscription)
+    .delete(isAuth,userContr.deleteSubscription)
 
 //User profile handling
 userRouter.route('/:user')
