@@ -2,12 +2,14 @@ class UserDto {
     id
     tag
     email
-    settings
+    publicSettings
+    privateSettings
     constructor(data){
         this.id = data.id || data._id
         this.tag = data.tag
         this.email = data.email
-        this.settings = data.settings
+        this.publicSettings = data.settings.public
+        this.privateSettings = data.settings.private
     }
 }
 
@@ -37,10 +39,11 @@ class UserPeopleDto extends UserDto {
                 res.notify = sub.notify
             }
         }) : null
+        //there will be owned difference for subscribers lately, redundant tn
         this.subscribers = data.subscribers ? data.subscribers.map((sub)=>{
           return {
               id:sub._id,
-              tag:sub._id,
+              tag:sub.tag,
               name:sub.profile.name,
               pfImg:sub.profile.pf_img
           }

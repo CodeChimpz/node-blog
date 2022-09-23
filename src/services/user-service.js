@@ -7,6 +7,8 @@ const Post = require('../models').Post
 
 
 class UserService {
+    //general
+    //
     //authentication
     //
     //register user
@@ -76,6 +78,19 @@ class UserService {
         }
         return user
     }
+    //accepts Object with "sub" and "user" fields for the user who issues the request and the subject of the request
+    async getTwo(dataObj){
+        const {subj,user} = dataObj
+        const s =  await User.findById(subj)
+        const u = await User.findById(user)
+        if(!s){
+            return { status:404, error: 'Invalid user to subscribe to'}
+        }
+        if(!u){
+            return { status:401, error:"You do not exist"}
+        }
+        return {subj:s,user:u}
+    }
     // get all user posts
     async editProfile(dataObj){
         const{ id, data } = dataObj
@@ -91,7 +106,6 @@ class UserService {
     async editSettings(dataObj){
         const user = await User.findById(dataObj.id)
         user.settings = dataObj.data
-        console.log(dataObj.data)
         await user.save()
 
     }
@@ -99,30 +113,39 @@ class UserService {
     //Sub to user, returns the user to whom you subbed
     async subscribe(dataObj){
         const {to,by,notify} = dataObj
-        const dom =  await User.findOne({tag:to})
-        const sub = await User.findById(by).select('subscriptions.id')
-        if(!dom){
-            return { status:404, error: 'Invalid user to subscribe to'}
-        }
-        if(!sub){
-            return { status:401, error:"You do not exist"}
-        }
-        const checkSub = sub.subscriptions.filter(s=>{if(s.id.toString() == dom._id.toString()){return true}})
-        if (checkSub.length) {
+        const checkSub = by.subscriptions.find(s=>
+        {
+            return s.id.toString() == to._id.toString()
+        })
+        if (checkSub) {
             return { status:300, error: 'Already following to this user'}
         }
-        sub.subscriptions.push({
-            id:dom._id,
+        by.subscriptions.push({
+            id:to._id,
             notify
         })
-        await sub.save()
-        return dom
+        await by.save()
+        return to
     }
-    async unsubscribe(){
-
+    async unsubscribe(dataObj){
+        const {to,by} = dataObj
+        const checkSub = by.subscriptions.find(s=>{return s.id.toString() == to._id.toString()})
+        if (!checkSub){
+            return { status:300, error: 'Not subscribed'}
+        }
+        by.subscriptions.splice(by.subscriptions.indexOf(checkSub))
+        await by.save()
+        return {}
     }
-    async editSub(){
-
+    async editSub(dataObj){
+        const {to,by,notify} = dataObj
+        const checkSub = by.subscriptions.find(s=>{return s.id.toString() == to._id.toString()})
+        if (!checkSub){
+            return { status:300, error: 'Not subscribed'}
+        }
+        checkSub.notify = notify
+        await by.save()
+        return {}
     }
 }
 

@@ -118,7 +118,7 @@ exports.getSubscriptions = async(req,res,next)=>{
             urPage = true
             return res.status(200).json({result:user,urPage})
         }
-        res.status(200).json({result:new UserPeopleDto()})
+        res.status(200).json({result:new UserPeopleDto(user)})
     }catch(err){
         next(err)
     }
@@ -128,12 +128,19 @@ exports.getSubscriptions = async(req,res,next)=>{
 exports.postSubscription = async (req,res,next)=>{
     try{
         //get info from request
-        const subscription = {
-            to:req.body.sub.to || req.params.user,
-            by:req.userId,
-            notify:req.body.sub.notify
-        }
+        const to = req.body.sub.to
+        const by = req.userId
+        const notify = req.body.sub.notify
         //check user existance and authentiaction
+        const check = await UserService.getTwo({subj:to,user:by})
+        if (check.error){
+            return res.status(check.status).json({message:check.error})
+        }
+        const subscription = {
+            to:check.subj,
+            by:check.user,
+            notify
+        }
         const subbed = await UserService.subscribe(subscription)
         if (subbed.error){
             return res.status(subbed.status).json({message:subbed.error})
@@ -149,121 +156,71 @@ exports.postSubscription = async (req,res,next)=>{
 }
 //edit subscription settings
 exports.editSubscription = async (req,res,next)=>{
-    //get info from request
-    const subscription = {
-        from:req.body.sub.to || req.params.user,
-        by:req.userId,
-        notify:req.body.sub.notify,
+    try{
+        //get info from request
+        const tag = req.params.user
+        const to = req.body.sub.to
+        const by = req.userId
+        const notify = req.body.sub.notify
+        //check user existance and authentiaction
+        const check = await UserService.getTwo({subj:to,user:by})
+        if (check.error){
+            return res.status(check.status).json({message:check.error})
+        }
+        const subscription = {
+            to:check.subj,
+            by:check.user,
+            notify
+        }
+        const updated = await UserService.editSub(subscription)
+        if(updated.error){
+            return res.redirect(`/${tag}`)
+        }
+        res.status(200).json({
+            message:'Subscribtion settings udated'
+        })
+    }catch(err){
+        next(err)
     }
+
 
 }
 exports.deleteSubscription = async (req,res,next) =>{
+    try{
+        const to = req.body.sub.to
+        const by = req.userId
+        const check = await UserService.getTwo({subj:to,user:by})
+        if (check.error){
+            return res.status(check.status).json({message:check.error})
+        }
+        const subscription = {
+            to:check.subj,
+            by:check.user
+        }
+        const deleted = await UserService.unsubscribe(subscription)
+        if(deleted.error){
+            return res.status(404).json({message:deleted.error})
+        }
+        res.status(200).json({
+            message:'Unsubscribed successfully'
+
+        })
+    }catch(err){
+        next(err)
+    }
 
 }
 //view subscribers
 exports.getSubscribers = async(req,res,next)=>{
-
-}
-
-
-
-exports.delToUserSubscr = async (req,res,next) => {
-    try{
-        const userToName = req.params.user
-        const userById = req.userId
-        //check user existance and authentication
-        const userTo =  await User.findOne({tag:userToName})
-        const userBy = await User.findById(userById)
-        if(!userBy || !userTo){
-            const reason = `${!userBy ? 'Not authenticated!' : `Invalid subject to subscribe to - ${userToName}!`}`
-            return res.status(404).json({message:reason})
+        const user = req.body.user.id
+        const subs = await UserService.getUser({id:user},{including:'subscribers'})
+        if(subs.error){
+            return res.status(404).json({message:subs.error})
         }
-
-        await User.findOneAndUpdate({tag:userToName},{$pull:{subscrMe:{tag:userBy.tag}}})
-        const result = await User.findByIdAndUpdate(userById,{$pull:{subscrI:{tag:userToName}}})
-
         res.status(200).json({
-            message:'Successfully unsubbed from '+userToName+' !',
-            result:result.subscrI
+            message:'Subscribers loaded',
+            result:new UserPeopleDto(subs)
         })
-    }
-    catch(err){
-        next(err)
-    }
 }
 
-exports.getMyUserSubscr = async (req,res,next) => {
-        try{
-            const userId = req.userId
-        const userTag = req.params.user
-        const user = await User.findOne({tag:userTag})
-        if(!user){
-            return res.status(404).json({message:'No such user!'})
-        }
-        let result
-        if(userId != user._id){
-            result = user.subscrMe.map(sub=>{
-                return {"tag":sub.tag}
-            })
-        }
-        else{result = user.subscrMe}
-        res.status(200).json({
-            message:'subscribers list',
-            result
-        })
-        }
-        catch(err){
-
-        }
-}
-
-exports.editMyUserSubscr = async (req,res,next) => {
-        try{
-            const userId = req.userId
-            const userToTag = req.body.tag
-            const updAccess = req.body.accSess
-            //
-            const user = await User.findOne({tag:userToTag})
-            if(!user){
-                return res.status(404).json({message:'No such user!'})
-            }
-            //
-            const result = await User.findByIdAndUpdate(userId,{$set:{subscrMe:{
-                access:updAccess
-                    }}})
-            res.status(200).json({
-                message:'subscriber updated',
-                result:result.subscrMe
-            })
-        }
-        catch(err){
-
-        }
-}
-
-exports.getIUserSubscr = async (req,res,next) => {
-    try{
-        const userId = req.userId
-        const userTag = req.params.user
-        const user = await User.findOne({tag:userTag})
-        if(!user){
-            return res.status(404).json({message:'No such user!'})
-        }
-        let result
-        if(userId != user._id){
-            result = user.subscrI.map(sub=>{
-                return {"tag":sub.tag}
-            })
-        }
-        else{result = user.subscrI}
-
-        res.status(200).json({
-            message:'subscribers list',
-            result
-        })
-    }
-    catch(err){
-
-    }
-}
 
