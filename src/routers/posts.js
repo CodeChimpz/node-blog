@@ -30,7 +30,7 @@ postsRouter.route('/tags').get(
 )
 
 postsRouter.route('/:post')
-    .get(postContr.getUserPost)
+    .get(isAuth,postContr.getUserPost)
     .put(isAuth,
         [
             body('tags').customSanitizer(customValid.tagStringSanitizer)

@@ -8,8 +8,8 @@ class UserDto {
         this.id = data.id || data._id
         this.tag = data.tag
         this.email = data.email
-        this.publicSettings = data.settings.public
-        this.privateSettings = data.settings.private
+        this.publicSettings = data.settings.publicSettings
+        this.privateSettings = data.settings.privateSettings
     }
 }
 

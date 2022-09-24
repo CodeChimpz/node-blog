@@ -30,11 +30,13 @@ class PostService{
         const query =  include ? Post.findById(id).populate(include.include,include.fields) : Post.findById(id)
         const post = await query.exec()
         //check permissions
-        if(check.post(post,user)){
-            return { error: 'Can\'t view this'}
-        }
         if(!post){
             return { error : 'No such post'}
+        }
+        if(post.hidden){
+            if(post.creator.settings && !check.post(post,user, post.creator.settings.publicSettings.access.specific)){
+                return { error: 'Can\'t view this'}
+            }
         }
         return post
     }

@@ -78,7 +78,12 @@ class UserService {
         }
         //for every post check if it is accessible to the user who asked
         if(user.posts){
-            user.posts =  user.posts.filter(pst=>{check.post(pst,options.by,user.settings.publicSettings.access.specific)})
+            user.posts = user.posts.filter(pst=>{
+                if(pst.hidden){
+                    return check.post(pst,options.by,user.settings.publicSettings.access.specific)
+                }
+                else return true
+            })
         }
         return user
     }
@@ -143,6 +148,11 @@ class UserService {
     }
     async editSub(dataObj){
         const {to,by,notify} = dataObj
+        if(!to.settings.publicSettings.access.all.seeSubscribers || to.settings.publicSettings.access.specific.find(u=>{
+            return u.id.toString() === by._id.toString() && !u.details.seeSubscribers
+        }) ){
+            return { status:401, error: 'Not allowed to see this users subs'}
+        }
         const checkSub = by.subscriptions.find(s=>{return s.id.toString() == to._id.toString()})
         if (!checkSub){
             return { status:300, error: 'Not subscribed'}

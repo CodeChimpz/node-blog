@@ -113,12 +113,21 @@ exports.getSubscriptions = async(req,res,next)=>{
         const find = req.params.user
         let urPage = false
         //
-        const user = await UserService.getUser({'tag':find},{including:'subscribers'},['subscriptions'])
+        const user = await UserService.getUser({'tag':find},{including:'subscribers'},['subscriptions','settings'])
         if(user.error){
             return res.status(404).json({message:user.error})
         }
         if (user._id == req.userId){
             urPage = true
+        }
+        if(user.subscriptions && !urPage){
+            if(!user.settings.publicSettings.access.all.seeSubscriptions || user.settings.publicSettings.access.specific.find(u=>{
+                return u.id.toString() === by._id.toString() && !u.details.seeSubscriptions
+            }) ){
+                return res.status(404).json({message:'Can\'t access that'})
+            }
+        }
+        if(urPage){
             return res.status(200).json({result:user,urPage})
         }
         res.status(200).json({result:new UserPeopleDto(user)})
@@ -216,7 +225,14 @@ exports.deleteSubscription = async (req,res,next) =>{
 //view subscribers
 exports.getSubscribers = async(req,res,next)=>{
         const user = req.body.user.id
-        const subs = await UserService.getUser({id:user},{including:'subscribers'})
+        const subs = await UserService.getUser({id:user},{including:'subscribers'},['tag','name','settings'])
+        if(subs.subscribers && subs._id.toString() !== req.userId.toString()){
+            if(!subs.settings.publicSettings.access.all.seeSubscribers || subs.settings.publicSettings.access.specific.find(u=>{
+                return u.id.toString() === by._id.toString() && !u.details.seeSubscribers
+            }) ){
+                return res.status(404).json({message:'Can\'t access that'})
+            }
+        }
         if(subs.error){
             return res.status(404).json({message:subs.error})
         }
