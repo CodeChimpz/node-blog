@@ -11,7 +11,10 @@ exports.getUserPage = async (req,res,next)=>{
         //
         let urPage = false
         const user = await UserService.getUser({tag:userToGet},
-            {including:'posts'})
+            {
+                including:'posts',
+                by:req.userId
+                })
         if(user.error){
             return res.status(404).json({message:user.error})
         }

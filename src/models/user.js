@@ -27,11 +27,44 @@ const userSchema = new Schema({
     },
     settings: {
         publicSettings:{
-            //0-no,1-default(all),2-friends
-            allowMention:{type:Number,default:1},
-            allowSend:{type:Number,default:1},
-            seeSubscribers:{type:Boolean,default:false},
-            seeSubscriptions:{type:Boolean,default:false},
+            access:{
+                all:{
+                    //0-no,1-default(all),2-friends
+                    allowMention:{type:Number,default:1},
+                    allowSend:{type:Number,default:1},
+                    seeSubscribers:{type:Boolean,default:false},
+                    seeSubscriptions:{type:Boolean,default:false},
+                },
+                specific:[{
+                    id:{
+                        type:Schema.Types.ObjectId,
+                        ref:'User',
+                        required: true
+                    },
+                    value:{
+                        type:Number,
+                        default:1,
+                    },
+                    details:{
+                        allowMention:{type:Boolean,default:true},
+                        allowSend:{type:Boolean,default:true},
+                        seeSubscribers:{type:Boolean,default:false},
+                        seeSubscriptions:{type:Boolean,default:false},
+                    },
+                    //post with hidden tag won't be seen by user
+                    forbidTags:[
+                        {
+                            tag:{type:String}
+                        }
+                    ]
+                }],
+                //all forbidden tags
+                forbidTags:[
+                    {
+                        tag:{type:String}
+                    }
+                ]
+            }
         },
         privateSettings:{
           notifyOnSub:{type:Boolean,default:true}
@@ -49,34 +82,7 @@ const userSchema = new Schema({
                 type:String,
             },
         }
-        ],
-    access:[{
-        id:{
-            type:Schema.Types.ObjectId,
-            ref:'User',
-            required: true
-        },
-        value:{
-            type:Number,
-            default:1,
-        },
-        details:{
-            allowView:{
-                type:Boolean,
-                default:true
-            },
-            allowSend:{
-                type:Boolean,
-                default:true
-            },
-            //post with hidden tag won't be seen by user
-            forbidTags:[
-                {
-                    tag:{type:String}
-                }
-            ]
-        }
-    }]
+        ]
 },{
     timestamps:true
 })

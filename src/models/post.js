@@ -21,7 +21,7 @@ const postSchema = new Schema({
         tags:[
             {type:String}
         ],
-        hidden:[
+        hidden:
             {
                 mentions:[
                     { id:{type:Schema.Types.ObjectId,ref:'User'},tag:{type:String}}
@@ -33,8 +33,7 @@ const postSchema = new Schema({
                     users:[
                         { id:{type:Schema.Types.ObjectId,ref:'User'}}
                 ]}
-            }
-        ],
+            },
         creator:{
             type:Schema.Types.ObjectId,
             ref:'User'

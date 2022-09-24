@@ -7,8 +7,9 @@ exports.getUserPost = async (req,res,next) => {
     try{
         //get info from request
         const postId = req.params.post
+        const id = req.userId
         //if id is in post.hidden.forbidden.users or in user.
-        const post = await PostService.getPost(postId,{include:'creator',fields:['tag','name']})
+        const post = await PostService.getPost(postId,{include:'creator',fields:['tag','name','settings.publicSettings.access']},id)
         if(post.error){
             return res.status(404).json({message:post.error})
         }
