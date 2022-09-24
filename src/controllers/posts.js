@@ -27,7 +27,7 @@ exports.createUserPost = async (req,res,next) => {
         }
         //todo: make a mapper
         const dataObj = {
-            hidden:req.body.hidden,
+            hidden:JSON.parse(req.body.hidden),
             content: req.body.content,
             tags: req.body.tags,
             gallery : PostService.formGallery(req.files),
@@ -56,6 +56,7 @@ exports.editUserPost = async (req,res,next) => {
             content: req.body.content,
             tags: req.body.tags,
             gallery : req.files.length ? PostService.formGallery(req.files) : null,
+            hidden:JSON.parse(req.body.hidden),
         }
         const check = await PostService.checkOwnership({
             userId:req.userId,
