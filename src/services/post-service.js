@@ -1,6 +1,6 @@
 const files = require('../util').files
 const PAGE_SZ = parseInt(require('../config.json').page.pageSize)
-
+const check = require('../util').checkAccess
 const Post = require('../models').Post
 
 class PostService{
@@ -25,9 +25,14 @@ class PostService{
         }
         return check
     }
-    async getPost(id,include){
+    async getPost(id,include,user){
+        //
         const query =  include ? Post.findById(id).populate(include.include,include.fields) : Post.findById(id)
         const post = await query.exec()
+        //check permissions
+        if(check.post(post,user)){
+            return { error: 'Can\'t view this'}
+        }
         if(!post){
             return { error : 'No such post'}
         }

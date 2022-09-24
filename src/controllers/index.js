@@ -7,11 +7,8 @@ function getIndex(req,res) {
     res.status(200).json({result:"index"})
 }
 
-function get404(req,res,next) {
-    //todo: this should be a middleware , I`ll deal with it later
-    const err = new Error('No such page exists')
-    err.status = 404
-    next(err)
+function get404(req,res) {
+    res.status(404).json({result:"No such page"})
 }
 
 exports.get404 = get404

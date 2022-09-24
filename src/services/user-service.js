@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt')
 
 const files = require('../util').files
-
+const check = require('../util').checkAccess
 const User = require('../models').User
 const Post = require('../models').Post
 
@@ -75,6 +75,10 @@ class UserService {
         const user = await query.exec()
         if (!user){
             return { error : "User not found" }
+        }
+        //for every post check if it is accessible to the user who asked
+        if(user.posts){
+            user.posts =  user.posts.filter(pst=>{check.post(pst,options.by,user.settings.publicSettings.access.specific)})
         }
         return user
     }
