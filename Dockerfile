@@ -8,7 +8,11 @@ RUN npm install
 
 COPY . ./
 
-EXPOSE 8080
+ENV PORT 1000
+
+EXPOSE ${PORT}
+
+VOLUME [ "/app/public" ]
 
 CMD ["node","server.js"]
 
